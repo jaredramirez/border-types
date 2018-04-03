@@ -1,5 +1,7 @@
 module Main where
 
+import qualified Parser as P
+
 main :: IO ()
 main = do
-  putStrLn "hello world"
+    putStrLn P.parse

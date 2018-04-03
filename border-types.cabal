@@ -1,14 +1,13 @@
 name:                border-types
 version:             0.1.0.0
--- synopsis:
--- description:
+synopsis:            Generate types from Elm and host langauges
+description:         CLI tool to generate types for multiple languages from a single config file
 homepage:            https://github.com/jaredramirez/border-types#readme
 license:             BSD3
 license-file:        LICENSE
 author:              Jared Ramirez
 maintainer:          jaredramirez@me.com
-copyright:           2018 Jared Ramirez
-category:            Web
+copyright:           2018 Jared Ramirez category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
 extra-source-files:  README.md
@@ -18,3 +17,37 @@ executable border-types
   main-is:             Main.hs
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
+                     , text >= 1.2.3.0 && < 1.3.0.0
+                     , unordered-containers >= 0.2.9.0 && < 0.3.0.0
+                     , aeson >= 1.3.0.0 && < 1.4
+                     , aeson-better-errors >= 0.9.1.0 && < 1.0.0.0
+                     , bytestring >= 0.10.8.2 && < 0.11.0.0
+  other-modules:       Parser
+
+-- FOR TESTING
+library 
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+  build-depends:       base >= 4.7 && < 5
+                     , text >= 1.2.3.0 && < 1.3.0.0
+                     , unordered-containers >= 0.2.9.0 && < 0.3.0.0
+                     , aeson >= 1.3.0.0 && < 1.4
+                     , aeson-better-errors >= 0.9.1.0 && < 1.0.0.0
+                     , bytestring >= 0.10.8.2 && < 0.11.0.0
+  exposed-modules:     Parser
+
+test-suite unit-tests
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Test.hs
+  default-language:    Haskell2010
+  build-depends:       base >= 4.7 && < 5
+                     , hspec >= 2.5.0 && < 3.0.0
+                     , hspec-discover >= 2.5.0 && < 3.0.0
+                     , unordered-containers >= 0.2.9.0 && < 0.3.0.0
+                     , aeson >= 1.3.0.0 && < 1.4
+                     , aeson-better-errors >= 0.9.1.0 && < 1.0.0.0
+                     , bytestring >= 0.10.8.2 && < 0.11.0.0
+                     , border-types
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  other-modules:       ParserSpec
