@@ -200,3 +200,6 @@ spec =
                                  , ("Good", [AST.Record (HashMap.fromList [("hello", AST.String)])])
                                  ])
                 in P.parseCustomType json `shouldBe` Right expected
+
+main :: IO ()
+main = Hspec.hspec spec
