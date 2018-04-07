@@ -1,13 +1,21 @@
 module Ast
-    ( CustomType(..)
+    ( LanguageConfig(..)
+    , CustomType(..)
     , PrimitiveType(..)
     ) where
 
 import qualified Data.HashMap.Strict as HashMap
 import qualified Data.Text as Text
 
-newtype Config =
-    Config [CustomType]
+data Config = Config
+    { langauges :: [LanguageConfig]
+    , types :: [CustomType]
+    } deriving (Show, Eq)
+
+data LanguageConfig
+    = ElmConfig { outputPath :: Text.Text }
+    | ReasonConfig { outputPath :: Text.Text }
+    deriving (Show, Eq)
 
 data CustomType
     = Alias { name :: Text.Text
@@ -21,8 +29,8 @@ data PrimitiveType
     | Int
     | Float
     | Bool
-    | List PrimitiveType
     | Unit
+    | List PrimitiveType
     | Tuple [PrimitiveType]
     | Record (HashMap.HashMap Text.Text PrimitiveType)
     deriving (Show, Eq)
