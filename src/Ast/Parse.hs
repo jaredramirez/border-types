@@ -163,6 +163,7 @@ data TypeParseError
     = UnknownPrimitiveType Text.Text
     | UnknownPrimitiveTypeWithGuess Text.Text
                                     Text.Text
+    | InvalidTuple
     | InvalidType JsonTypes.Value
     deriving (Show)
 
@@ -196,8 +197,11 @@ primitiveTypeParser value =
                     Just (_, guess) -> Left $ UnknownPrimitiveTypeWithGuess s guess
                     Nothing -> Left $ UnknownPrimitiveType s
         (JsonTypes.Array v) ->
-            let subValues = traverse primitiveTypeParser $ Vector.toList v
-            in subValues >>= (Right . AST.Tuple)
+            let list = Vector.toList v
+            in case list of
+                   [] -> Right AST.Unit
+                   [_] -> Left InvalidTuple
+                   l -> traverse primitiveTypeParser l >>= (Right . AST.Tuple)
         (JsonTypes.Object o) ->
             let (keys, values) = unzip $ HashMap.toList $ HashMap.map primitiveTypeParser o
                 map = fmap (AST.Record . HashMap.fromList . zip keys) (sequence values)
@@ -219,6 +223,8 @@ displayPrimitiveTypeParserError err =
             "I got \"" <> invalidType <> "\" as a field type, which is invalid. Did you mean \"" <>
             guess <>
             "\"?"
+        InvalidTuple ->
+            "I got a tuple with one element, which is invalid. Please add more values, or don't put the type in a tuple!"
         InvalidType invalidType ->
             "I was expecting a string or object type, but got " <> jsonValueToText invalidType <>
             "."

@@ -25,13 +25,17 @@ spec =
                 it "a int" $ P.parsePrimitiveType "\"int\"" `shouldBe` Right AST.Int
                 it "a float" $ P.parsePrimitiveType "\"float\"" `shouldBe` Right AST.Float
                 it "a bool" $ P.parsePrimitiveType "\"bool\"" `shouldBe` Right AST.Bool
+                it "a unit" $ P.parsePrimitiveType "[]" `shouldBe` Right AST.Unit
                 it "an x-tuple" $
                     P.parsePrimitiveType "[\"string\", \"bool\", \"int\", \"float\"]" `shouldBe`
                     Right (AST.Tuple [AST.String, AST.Bool, AST.Int, AST.Float])
-                it "an x-tuple with a sub recor" $
+                it "an x-tuple with a sub record" $
                     P.parsePrimitiveType "[\"string\", {\"hello\": \"int\"}]" `shouldBe`
                     Right
                         (AST.Tuple [AST.String, AST.Record (HashMap.fromList [("hello", AST.Int)])])
+                it "an x-tuple with a nested x-tuple" $
+                    P.parsePrimitiveType "[[\"string\", \"bool\"], \"int\", \"float\"]" `shouldBe`
+                    Right (AST.Tuple [AST.Tuple [AST.String, AST.Bool], AST.Int, AST.Float])
                 it "a record" $
                     let json =
                             "{\n\
@@ -87,6 +91,11 @@ spec =
                     Left
                         (errorPrefix ++
                          "I was expecting one of \"int\", \"float\", \"bool\", \"string\" or an object, but got \"ugh\" instead.\n")
+                it "an x-tuple with only 1 element" $
+                    P.parsePrimitiveType "[\"string\"]" `shouldBe`
+                    Left
+                        (errorPrefix ++
+                         "I got a tuple with one element, which is invalid. Please add more values, or don't put the type in a tuple!\n")
                 it "a nested record with invalid sub-type" $
                     let json =
                             "{\n\
