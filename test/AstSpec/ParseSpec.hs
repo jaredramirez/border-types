@@ -25,6 +25,8 @@ spec =
                 it "a int" $ P.parsePrimitiveType "\"int\"" `shouldBe` Right AST.Int
                 it "a float" $ P.parsePrimitiveType "\"float\"" `shouldBe` Right AST.Float
                 it "a bool" $ P.parsePrimitiveType "\"bool\"" `shouldBe` Right AST.Bool
+                it "a list" $
+                    P.parsePrimitiveType "[\"string\"]" `shouldBe` Right (AST.List AST.String)
                 it "a unit" $ P.parsePrimitiveType "[]" `shouldBe` Right AST.Unit
                 it "an x-tuple" $
                     P.parsePrimitiveType "[\"string\", \"bool\", \"int\", \"float\"]" `shouldBe`
@@ -91,11 +93,6 @@ spec =
                     Left
                         (errorPrefix ++
                          "I was expecting one of \"int\", \"float\", \"bool\", \"string\" or an object, but got \"ugh\" instead.\n")
-                it "an x-tuple with only 1 element" $
-                    P.parsePrimitiveType "[\"string\"]" `shouldBe`
-                    Left
-                        (errorPrefix ++
-                         "I got a tuple with one element, which is invalid. Please add more values, or don't put the type in a tuple!\n")
                 it "a nested record with invalid sub-type" $
                     let json =
                             "{\n\

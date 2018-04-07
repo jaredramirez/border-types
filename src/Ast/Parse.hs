@@ -200,8 +200,8 @@ primitiveTypeParser value =
             let list = Vector.toList v
             in case list of
                    [] -> Right AST.Unit
-                   [_] -> Left InvalidTuple
-                   l -> traverse primitiveTypeParser l >>= (Right . AST.Tuple)
+                   [listValue] -> primitiveTypeParser listValue >>= (Right . AST.List)
+                   tupleValues -> traverse primitiveTypeParser tupleValues >>= (Right . AST.Tuple)
         (JsonTypes.Object o) ->
             let (keys, values) = unzip $ HashMap.toList $ HashMap.map primitiveTypeParser o
                 map = fmap (AST.Record . HashMap.fromList . zip keys) (sequence values)
