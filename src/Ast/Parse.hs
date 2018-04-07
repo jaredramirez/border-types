@@ -17,7 +17,6 @@ import Data.Semigroup ((<>))
 import qualified Data.Text as Text
 import qualified Data.Vector as Vector
 import qualified Misc
-import Misc ((|>))
 
 -- CUSTOM TYPE
 parseCustomType :: BS.ByteString -> Either String AST.CustomType
@@ -71,29 +70,31 @@ customTypeParser o =
                case (nameJsonValue, kindJsonValue) of
                    (JsonTypes.String name, JsonTypes.String kind)
                        | kind == kindAliasJsonValue ->
-                           aliasTypeParser o |> fmap (AST.Alias name) |>
-                           Misc.mapLeft (Misc.apply name)
+                           let eitherAliasTypeValue = aliasTypeValueParser o
+                           in Misc.mapLeft (Misc.apply name) $
+                              fmap (AST.Alias name) eitherAliasTypeValue
                        | kind == kindUnionJsonValue ->
-                           unionTypeParser o |> fmap (AST.Union name) |>
-                           Misc.mapLeft (Misc.apply name)
+                           let eitherUnionTypeConstructors = unionTypeConstructorsParser o
+                           in Misc.mapLeft (Misc.apply name) $
+                              fmap (AST.Union name) eitherUnionTypeConstructors
                        | otherwise -> Left (InvalidKindValue kind)
                    (_, JsonTypes.String _) -> Left (InvalidNameType nameJsonValue)
                    (JsonTypes.String _, _) -> Left (InvalidKindType kindJsonValue)
                    (_, _) -> Left (InvalidNameType nameJsonValue)
 
-aliasTypeParser ::
+aliasTypeValueParser ::
        HashMap.HashMap Text.Text JsonTypes.Value
     -> Either (Text.Text -> CustomTypeParseError) AST.PrimitiveType
-aliasTypeParser o =
+aliasTypeValueParser o =
     let maybeValue = HashMap.lookup valueJsonKey o
     in case maybeValue of
            Just value -> Misc.mapLeft AliasValueTypeError (primitiveTypeParser value)
            Nothing -> Left MissingValue
 
-unionTypeParser ::
+unionTypeConstructorsParser ::
        HashMap.HashMap Text.Text JsonTypes.Value
     -> Either (Text.Text -> CustomTypeParseError) (HashMap.HashMap Text.Text [AST.PrimitiveType])
-unionTypeParser o =
+unionTypeConstructorsParser o =
     let maybeConstructors = HashMap.lookup constructorsJsonKey o
     in case maybeConstructors of
            Just constructorValue ->
@@ -194,6 +195,9 @@ primitiveTypeParser value =
                 case List.find ((==) s . fst) typeMisspellings of
                     Just (_, guess) -> Left $ UnknownPrimitiveTypeWithGuess s guess
                     Nothing -> Left $ UnknownPrimitiveType s
+        (JsonTypes.Array v) ->
+            let subValues = traverse primitiveTypeParser $ Vector.toList v
+            in subValues >>= (Right . AST.Tuple)
         (JsonTypes.Object o) ->
             let (keys, values) = unzip $ HashMap.toList $ HashMap.map primitiveTypeParser o
                 map = fmap (AST.Record . HashMap.fromList . zip keys) (sequence values)
@@ -204,7 +208,11 @@ displayPrimitiveTypeParserError :: TypeParseError -> Text.Text
 displayPrimitiveTypeParserError err =
     case err of
         UnknownPrimitiveType invalidType ->
-            "I was expecting one of \"int\", \"float\", \"bool\", \"string\" or an object, but got \"" <>
+            "I was expecting one of \"" <> intJsonKey <> "\", \"" <> floatJsonKey <> "\", \"" <>
+            boolJsonKey <>
+            "\", \"" <>
+            stringJsonKey <>
+            "\" or an object, but got \"" <>
             invalidType <>
             "\" instead."
         UnknownPrimitiveTypeWithGuess invalidType guess ->

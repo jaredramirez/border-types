@@ -21,5 +21,7 @@ data PrimitiveType
     | Int
     | Float
     | Bool
+    | List PrimitiveType
+    | Tuple [PrimitiveType]
     | Record (HashMap.HashMap Text.Text PrimitiveType)
     deriving (Show, Eq)

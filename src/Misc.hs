@@ -5,12 +5,8 @@ import qualified Control.Arrow as Arrow
 apply :: a -> (a -> b) -> b
 apply a f = f a
 
--- Another alias because I like (|>) better than (&)
-(|>) :: a -> (a -> b) -> b
-x |> f = apply x f
-
-infixl 0 |>
-
--- This is just an alias to make it more clear how it's used
-mapLeft :: (Arrow.ArrowChoice a) => a b c -> a (Either b d) (Either c d)
+-- This is just an alias to make the how I'm using the function more clear
+-- This is a really cool usage of how (->) is an ADT in haskell, checkout 
+-- https://stackoverflow.com/a/13504032/8838731!
+mapLeft :: (b -> c) -> Either b a -> Either c a
 mapLeft = Arrow.left
