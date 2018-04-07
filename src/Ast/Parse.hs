@@ -121,19 +121,19 @@ instance JsonTypes.FromJSON AST.CustomType where
     parseJSON = Json.toAesonParser displayCustomTypeParserError (Json.withObject customTypeParser)
 
 data CustomTypeParseError
-    = MissingName
-    | InvalidNameType JsonTypes.Value
-    | MissingKind
-    | InvalidKindType JsonTypes.Value
-    | InvalidKindValue Text.Text
-    | MissingValue Text.Text
-    | MissingConstructors Text.Text
-    | AliasValueTypeError TypeParseError
-                          Text.Text
-    | ConstructorsTypeError JsonTypes.Value
-                            Text.Text
-    | ConstructorValueTypeError TypeParseError
-                                Text.Text
+    = MissingCustomTypeName
+    | InvalidCustomTypeNameType JsonTypes.Value
+    | MissingCustomTypeKind
+    | InvalidCustomTypeKindType JsonTypes.Value
+    | InvalidCustomTypeKindValue Text.Text
+    | MissingCustomTypeValue Text.Text
+    | MissingCustomTypeConstructors Text.Text
+    | CustomTypeAliasValueTypeError TypeParseError
+                                    Text.Text
+    | CustomTypeConstructorsTypeError JsonTypes.Value
+                                      Text.Text
+    | CustomTypeConstructorValueTypeError TypeParseError
+                                          Text.Text
     deriving (Show)
 
 nameJsonKey :: Text.Text
@@ -159,8 +159,8 @@ customTypeParser o =
     let maybeName = HashMap.lookup nameJsonKey o
         maybeKind = HashMap.lookup kindJsonKey o
     in case (maybeName, maybeKind) of
-           (Nothing, _) -> Left MissingName
-           (_, Nothing) -> Left MissingKind
+           (Nothing, _) -> Left MissingCustomTypeName
+           (_, Nothing) -> Left MissingCustomTypeKind
            (Just nameJsonValue, Just kindJsonValue) ->
                case (nameJsonValue, kindJsonValue) of
                    (JsonTypes.String name, JsonTypes.String kind)
@@ -172,10 +172,10 @@ customTypeParser o =
                            let eitherUnionTypeConstructors = unionTypeConstructorsParser o
                            in Misc.mapLeft (Misc.apply name) $
                               fmap (AST.Union name) eitherUnionTypeConstructors
-                       | otherwise -> Left (InvalidKindValue kind)
-                   (_, JsonTypes.String _) -> Left (InvalidNameType nameJsonValue)
-                   (JsonTypes.String _, _) -> Left (InvalidKindType kindJsonValue)
-                   (_, _) -> Left (InvalidNameType nameJsonValue)
+                       | otherwise -> Left (InvalidCustomTypeKindValue kind)
+                   (_, JsonTypes.String _) -> Left (InvalidCustomTypeNameType nameJsonValue)
+                   (JsonTypes.String _, _) -> Left (InvalidCustomTypeKindType kindJsonValue)
+                   (_, _) -> Left (InvalidCustomTypeNameType nameJsonValue)
 
 aliasTypeValueParser ::
        HashMap.HashMap Text.Text JsonTypes.Value
@@ -183,8 +183,8 @@ aliasTypeValueParser ::
 aliasTypeValueParser o =
     let maybeValue = HashMap.lookup valueJsonKey o
     in case maybeValue of
-           Just value -> Misc.mapLeft AliasValueTypeError (primitiveTypeParser value)
-           Nothing -> Left MissingValue
+           Just value -> Misc.mapLeft CustomTypeAliasValueTypeError (primitiveTypeParser value)
+           Nothing -> Left MissingCustomTypeValue
 
 unionTypeConstructorsParser ::
        HashMap.HashMap Text.Text JsonTypes.Value
@@ -196,52 +196,53 @@ unionTypeConstructorsParser o =
                case constructorValue of
                    JsonTypes.Object constructorsMap ->
                        traverse primitiveTypeArrayParser constructorsMap
-                   invalid -> Left (ConstructorsTypeError invalid)
-           Nothing -> Left MissingConstructors
+                   invalid -> Left (CustomTypeConstructorsTypeError invalid)
+           Nothing -> Left MissingCustomTypeConstructors
 
 primitiveTypeArrayParser ::
        JsonTypes.Value -> Either (Text.Text -> CustomTypeParseError) [AST.PrimitiveType]
 primitiveTypeArrayParser value =
     case value of
         JsonTypes.Array vector ->
-            (Misc.mapLeft ConstructorValueTypeError . traverse primitiveTypeParser . Vector.toList)
+            (Misc.mapLeft CustomTypeConstructorValueTypeError .
+             traverse primitiveTypeParser . Vector.toList)
                 vector
-        invalid -> Left (ConstructorsTypeError invalid)
+        invalid -> Left (CustomTypeConstructorsTypeError invalid)
 
 displayCustomTypeParserError :: CustomTypeParseError -> Text.Text
 displayCustomTypeParserError err =
     case err of
-        MissingName ->
+        MissingCustomTypeName ->
             "I was expecting the \"name\" field to exist on the alias/union type, but I didn't find it!"
-        InvalidNameType invalidType ->
+        InvalidCustomTypeNameType invalidType ->
             "I was expecting the \"name\" field on the alias/union type to be of type \"string\", but it was " <>
             jsonValueToText invalidType <>
             "."
-        MissingKind ->
+        MissingCustomTypeKind ->
             "I was expecting the \"kind\" field to exist on the alias/union type, but I didn't find it!"
-        InvalidKindType invalidType ->
+        InvalidCustomTypeKindType invalidType ->
             "I was expecting the \"kind\" field on the alias/union type to be of type \"string\", but it was " <>
             jsonValueToText invalidType <>
             "."
-        InvalidKindValue invalidKind ->
+        InvalidCustomTypeKindValue invalidKind ->
             "I was expecting the \"kind\" field on the alias/union type to be either \"alias\" or \"union\", but it was \"" <>
             invalidKind <>
             "\"."
-        MissingValue aliasName ->
+        MissingCustomTypeValue aliasName ->
             "I was expecting the \"value\" field to exist on the alias type \"" <> aliasName <>
             "\", but I didn't find it!"
-        MissingConstructors unionName ->
+        MissingCustomTypeConstructors unionName ->
             "I was expecting the \"constructors\" field to exist on the union type \"" <> unionName <>
             "\", but I didn't find it!"
-        AliasValueTypeError err typeName ->
+        CustomTypeAliasValueTypeError err typeName ->
             "There's an issue in the alias type \"" <> typeName <> "\". " <>
             displayPrimitiveTypeParserError err
-        ConstructorsTypeError invalidType typeName ->
+        CustomTypeConstructorsTypeError invalidType typeName ->
             "On the \"" <> typeName <>
             "\" union type, I was expecting the \"constructors\" field to be a record, but it was of type " <>
             jsonValueToText invalidType <>
             "."
-        ConstructorValueTypeError err typeName ->
+        CustomTypeConstructorValueTypeError err typeName ->
             "There's an issue with one of the constructor values on the union type \"" <> typeName <>
             "\". " <>
             displayPrimitiveTypeParserError err
@@ -258,8 +259,7 @@ data TypeParseError
     = UnknownPrimitiveType Text.Text
     | UnknownPrimitiveTypeWithGuess Text.Text
                                     Text.Text
-    | InvalidTuple
-    | InvalidType JsonTypes.Value
+    | InvalidPrimitiveType JsonTypes.Value
     deriving (Show)
 
 intJsonKey :: Text.Text
@@ -301,7 +301,7 @@ primitiveTypeParser value =
             let (keys, values) = unzip $ HashMap.toList $ HashMap.map primitiveTypeParser o
                 map = fmap (AST.Record . HashMap.fromList . zip keys) (sequence values)
             in map
-        invalid -> Left $ InvalidType invalid
+        invalid -> Left $ InvalidPrimitiveType invalid
 
 displayPrimitiveTypeParserError :: TypeParseError -> Text.Text
 displayPrimitiveTypeParserError err =
@@ -318,9 +318,7 @@ displayPrimitiveTypeParserError err =
             "I got \"" <> invalidType <> "\" as a field type, which is invalid. Did you mean \"" <>
             guess <>
             "\"?"
-        InvalidTuple ->
-            "I got a tuple with one element, which is invalid. Please add more values, or don't put the type in a tuple!"
-        InvalidType invalidType ->
+        InvalidPrimitiveType invalidType ->
             "I was expecting a string or object type, but got " <> jsonValueToText invalidType <>
             "."
 
