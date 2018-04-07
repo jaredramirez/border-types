@@ -1,5 +1,6 @@
 module Ast
-    ( LanguageConfig(..)
+    ( Config(..)
+    , LanguageConfig(..)
     , CustomType(..)
     , PrimitiveType(..)
     ) where
