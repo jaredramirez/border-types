@@ -11,6 +11,7 @@ import qualified Data.Aeson as JsonBase
 import qualified Data.Aeson.BetterErrors as Json
 import qualified Data.Aeson.Types as JsonTypes
 import qualified Data.ByteString.Lazy as BS
+import qualified Data.Char as Char
 import qualified Data.HashMap.Strict as HashMap
 import qualified Data.List as List
 import Data.Semigroup ((<>))
@@ -30,6 +31,8 @@ instance JsonTypes.FromJSON Types.CustomType where
 data ParseError
     = MissingName
     | InvalidNameType JsonTypes.Value
+    | InvalidNameValue Text.Text
+                       Text.Text
     | MissingKind
     | InvalidKindType JsonTypes.Value
     | InvalidKindValue Text.Text
@@ -71,6 +74,10 @@ parseJsonObject o =
            (Just nameJsonValue, Just kindJsonValue) ->
                case (nameJsonValue, kindJsonValue) of
                    (JsonTypes.String name, JsonTypes.String kind)
+                       | Text.null name -> Left (InvalidNameValue "not be an empty string" name)
+                       | not $ startsWithCapitalLetter name ->
+                           Left (InvalidNameValue "start with a capital letter" name)
+                       | containsSpace name -> Left (InvalidNameValue "not contain any spaces" name)
                        | kind == kindAliasJsonValue ->
                            let eitherAliasTypeValue = aliasTypeValueParser o
                            in Misc.mapLeft (Misc.apply name) $
@@ -83,6 +90,12 @@ parseJsonObject o =
                    (_, JsonTypes.String _) -> Left (InvalidNameType nameJsonValue)
                    (JsonTypes.String _, _) -> Left (InvalidKindType kindJsonValue)
                    (_, _) -> Left (InvalidNameType nameJsonValue)
+
+startsWithCapitalLetter :: Text.Text -> Bool
+startsWithCapitalLetter = maybe False (Char.isUpper . fst) . Text.uncons
+
+containsSpace :: Text.Text -> Bool
+containsSpace = Text.isInfixOf " "
 
 aliasTypeValueParser ::
        HashMap.HashMap Text.Text JsonTypes.Value
@@ -125,6 +138,11 @@ displayParseError err =
             "I was expecting the \"name\" field on the alias/union type to be of type \"string\", but it was " <>
             PMisc.jsonValueToText invalidType <>
             "."
+        InvalidNameValue expected got ->
+            "I was expecting the \"name\" field on the alias/union type to " <> expected <>
+            ", but it was \"" <>
+            got <>
+            "\"."
         MissingKind ->
             "I was expecting the \"kind\" field to exist on the alias/union type, but I didn't find it!"
         InvalidKindType invalidType ->

@@ -42,10 +42,43 @@ spec =
                         errorPrefix ++
                         "I was expecting the \"name\" field on the alias/union type to be of type \"string\", but it was Bool.\n"
                 in P.parseString json `shouldBe` Left expected
+            it "if the name field is an empty string" $
+                let json =
+                        "{\n\
+                        \   \"name\": \"\",\n\
+                        \   \"kind\": \"alias\",\n\
+                        \   \"value\": \"string\"\n\
+                        \}"
+                    expected =
+                        errorPrefix ++
+                        "I was expecting the \"name\" field on the alias/union type to not be an empty string, but it was \"\".\n"
+                in P.parseString json `shouldBe` Left expected
+            it "if the name field is not capitalized" $
+                let json =
+                        "{\n\
+                        \   \"name\": \"myType\",\n\
+                        \   \"kind\": \"alias\",\n\
+                        \   \"value\": \"string\"\n\
+                        \}"
+                    expected =
+                        errorPrefix ++
+                        "I was expecting the \"name\" field on the alias/union type to start with a capital letter, but it was \"myType\".\n"
+                in P.parseString json `shouldBe` Left expected
+            it "if the name field has any spaces" $
+                let json =
+                        "{\n\
+                        \   \"name\": \"My Type\",\n\
+                        \   \"kind\": \"alias\",\n\
+                        \   \"value\": \"string\"\n\
+                        \}"
+                    expected =
+                        errorPrefix ++
+                        "I was expecting the \"name\" field on the alias/union type to not contain any spaces, but it was \"My Type\".\n"
+                in P.parseString json `shouldBe` Left expected
             it "kind field is missing" $
                 let json =
                         "{\n\
-                        \   \"name\": \"hello\",\n\
+                        \   \"name\": \"Hello\",\n\
                         \   \"value\": \"string\"\n\
                         \}"
                     expected =
@@ -56,35 +89,35 @@ spec =
                 it "if value field is missing" $
                     let json =
                             "{\n\
-                            \   \"name\": \"hello\",\n\
+                            \   \"name\": \"Hello\",\n\
                             \   \"kind\": \"alias\"\n\
                             \}"
                         expected =
                             errorPrefix ++
-                            "I was expecting the \"value\" field to exist on the alias type \"hello\", but I didn't find it!\n"
+                            "I was expecting the \"value\" field to exist on the alias type \"Hello\", but I didn't find it!\n"
                     in P.parseString json `shouldBe` Left expected
                 it "if value field is an invalid type" $
                     let json =
                             "{\n\
-                            \   \"name\": \"bad\",\n\
+                            \   \"name\": \"Bad\",\n\
                             \   \"kind\": \"alias\",\n\
                             \   \"value\": \"abcdefg\"\n\
                             \}"
                         expected =
                             errorPrefix ++
-                            "There's an issue in the alias type \"bad\". I was expecting one of \"int\", \"float\", \"bool\", \"string\" or an object, but got \"abcdefg\" instead.\n"
+                            "There's an issue in the alias type \"Bad\". I was expecting one of \"int\", \"float\", \"bool\", \"string\" or an object, but got \"abcdefg\" instead.\n"
                     in P.parseString json `shouldBe` Left expected
             describe "a union type" $ do
                 it "if the constructors field is not an object" $
                     let json =
                             "{\n\
-                            \   \"name\": \"bad\",\n\
+                            \   \"name\": \"Bad\",\n\
                             \   \"kind\": \"union\",\n\
                             \   \"constructors\": \"abcdefg\"\n\
                             \}"
                         expected =
                             errorPrefix ++
-                            "On the \"bad\" union type, I was expecting the \"constructors\" field to be a record, but it was of type String.\n"
+                            "On the \"Bad\" union type, I was expecting the \"constructors\" field to be a record, but it was of type String.\n"
                     in P.parseString json `shouldBe` Left expected
                 it "if not all constructors have valid primitive types" $
                     let json =
@@ -106,11 +139,11 @@ spec =
             it "an alias type" $
                 let json =
                         "{\n\
-                        \   \"name\": \"hello\",\n\
+                        \   \"name\": \"Hello\",\n\
                         \   \"kind\": \"alias\",\n\
                         \   \"value\": \"string\"\n\
                         \}"
-                    expected = Types.Alias "hello" Types.String
+                    expected = Types.Alias "Hello" Types.String
                 in P.parseString json `shouldBe` Right expected
             it "a union type" $
                 let json =
