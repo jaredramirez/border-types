@@ -1,4 +1,4 @@
-module Ast
+module Types
     ( Config(..)
     , LanguageConfig(..)
     , CustomType(..)

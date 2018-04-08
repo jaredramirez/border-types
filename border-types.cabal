@@ -7,7 +7,8 @@ license:             BSD3
 license-file:        LICENSE
 author:              Jared Ramirez
 maintainer:          jaredramirez@me.com
-copyright:           2018 Jared Ramirez category:            Web
+copyright:           2018 Jared Ramirez
+category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
 extra-source-files:  README.md
@@ -23,7 +24,13 @@ executable border-types
                      , aeson-better-errors >= 0.9.1.0 && < 1.0.0.0
                      , bytestring >= 0.10.8.2 && < 0.11.0.0
                      , vector >= 0.12.0.1 && < 0.13.0.0
-  other-modules:       Ast, Ast.Parse, Misc
+  other-modules:       Types
+                     , Parser.PrimitiveType
+                     , Parser.CustomType
+                     , Parser.LanguageConfig
+                     , Parser.RootConfig
+                     , Parser.Misc
+                     , Misc
 
 -- FOR TESTING
 library 
@@ -36,7 +43,13 @@ library
                      , aeson-better-errors >= 0.9.1.0 && < 1.0.0.0
                      , bytestring >= 0.10.8.2 && < 0.11.0.0
                      , vector >= 0.12.0.1 && < 0.13.0.0
-  exposed-modules:     Ast, Ast.Parse, Misc
+  exposed-modules:     Types
+                     , Parser.PrimitiveType
+                     , Parser.CustomType
+                     , Parser.LanguageConfig
+                     , Parser.RootConfig
+                     , Parser.Misc
+                     , Misc
 
 test-suite tests
   type:                exitcode-stdio-1.0
@@ -53,4 +66,7 @@ test-suite tests
                      , bytestring >= 0.10.8.2 && < 0.11.0.0
                      , border-types
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
-  other-modules:     AstSpec.ParseSpec
+  other-modules:       ParserSpec.PrimitiveTypeSpec
+                     , ParserSpec.CustomTypeSpec
+                     , ParserSpec.LanguageConfigSpec
+                     , ParserSpec.RootConfigSpec
