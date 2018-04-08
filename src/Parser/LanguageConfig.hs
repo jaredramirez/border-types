@@ -1,10 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Parser.LanguageConfig
-    ( parseLanguageConfig
-    , languageConfigParser
-    , displayLanguageConfigParseError
-    , LanguageConfigParseError
+    ( parseString
+    , parseJsonObject
+    , displayParseError
+    , ParseError
     ) where
 
 import qualified Data.Aeson as JsonBase
@@ -20,94 +20,91 @@ import qualified Misc
 import qualified Parser.Misc as PMisc
 import qualified Types
 
-parseLanguageConfig :: BS.ByteString -> Either String Types.LanguageConfig
-parseLanguageConfig = JsonBase.eitherDecode
+parseString :: BS.ByteString -> Either String Types.LanguageConfig
+parseString = JsonBase.eitherDecode
 
 instance JsonTypes.FromJSON Types.LanguageConfig where
-    parseJSON =
-        Json.toAesonParser displayLanguageConfigParseError (Json.withObject languageConfigParser)
+    parseJSON = Json.toAesonParser displayParseError (Json.withObject parseJsonObject)
 
-data LanguageConfigParseError
-    = MissingLanguageName
-    | InvalidLanguageNameValue Text.Text
-    | InvalidLanguageNameType JsonTypes.Value
-    | MissingLanguageOutputPath Text.Text
-    | InvalidLanguageOutputPathType JsonTypes.Value
-                                    Text.Text
+data ParseError
+    = MissingName
+    | InvalidNameValue Text.Text
+    | InvalidNameType JsonTypes.Value
+    | MissingOutputPath Text.Text
+    | InvalidOutputPathType JsonTypes.Value
+                            Text.Text
 
-languageNameJsonKey :: Text.Text
-languageNameJsonKey = "name"
+nameJsonKey :: Text.Text
+nameJsonKey = "name"
 
-elmLanguageJsonValue :: Text.Text
-elmLanguageJsonValue = "elm"
+elmJsonValue :: Text.Text
+elmJsonValue = "elm"
 
-reasonLanguageJsonValue :: Text.Text
-reasonLanguageJsonValue = "reason"
+reasonJsonValue :: Text.Text
+reasonJsonValue = "reason"
 
-languageOutputPathJsonKey :: Text.Text
-languageOutputPathJsonKey = "outputPath"
+outputPathJsonKey :: Text.Text
+outputPathJsonKey = "outputPath"
 
-languageConfigParser :: JsonTypes.Object -> Either LanguageConfigParseError Types.LanguageConfig
-languageConfigParser o =
-    let maybeName = HashMap.lookup languageNameJsonKey o
+parseJsonObject :: JsonTypes.Object -> Either ParseError Types.LanguageConfig
+parseJsonObject o =
+    let maybeName = HashMap.lookup nameJsonKey o
     in case maybeName of
            Just nameValue ->
                case nameValue of
                    (JsonTypes.String name)
-                       | name == elmLanguageJsonValue ->
-                           Misc.mapLeft (Misc.apply name) (elmConfigParser o)
-                       | name == reasonLanguageJsonValue ->
+                       | name == elmJsonValue -> Misc.mapLeft (Misc.apply name) (elmConfigParser o)
+                       | name == reasonJsonValue ->
                            Misc.mapLeft (Misc.apply name) (reasonConfigParser o)
-                       | otherwise -> Left (InvalidLanguageNameValue name)
-                   invalid -> Left (InvalidLanguageNameType invalid)
-           Nothing -> Left MissingLanguageName
+                       | otherwise -> Left (InvalidNameValue name)
+                   invalid -> Left (InvalidNameType invalid)
+           Nothing -> Left MissingName
 
 elmConfigParser ::
        HashMap.HashMap Text.Text JsonTypes.Value
-    -> Either (Text.Text -> LanguageConfigParseError) Types.LanguageConfig
+    -> Either (Text.Text -> ParseError) Types.LanguageConfig
 elmConfigParser o =
-    let maybeOutputPath = HashMap.lookup languageOutputPathJsonKey o
+    let maybeOutputPath = HashMap.lookup outputPathJsonKey o
     in case maybeOutputPath of
            Just outputPathValue ->
                case outputPathValue of
                    (JsonTypes.String outputPath) -> Right (Types.ElmConfig outputPath)
-                   invalid -> Left (InvalidLanguageOutputPathType invalid)
-           Nothing -> Left MissingLanguageOutputPath
+                   invalid -> Left (InvalidOutputPathType invalid)
+           Nothing -> Left MissingOutputPath
 
 reasonConfigParser ::
        HashMap.HashMap Text.Text JsonTypes.Value
-    -> Either (Text.Text -> LanguageConfigParseError) Types.LanguageConfig
+    -> Either (Text.Text -> ParseError) Types.LanguageConfig
 reasonConfigParser o =
-    let maybeOutputPath = HashMap.lookup languageOutputPathJsonKey o
+    let maybeOutputPath = HashMap.lookup outputPathJsonKey o
     in case maybeOutputPath of
            Just outputPathValue ->
                case outputPathValue of
                    (JsonTypes.String outputPath) -> Right (Types.ReasonConfig outputPath)
-                   invalid -> Left (InvalidLanguageOutputPathType invalid)
-           Nothing -> Left MissingLanguageOutputPath
+                   invalid -> Left (InvalidOutputPathType invalid)
+           Nothing -> Left MissingOutputPath
 
-displayLanguageConfigParseError :: LanguageConfigParseError -> Text.Text
-displayLanguageConfigParseError err =
+displayParseError :: ParseError -> Text.Text
+displayParseError err =
     case err of
-        MissingLanguageName ->
+        MissingName ->
             "I was expecting the \"name\" field to exists on the language config, but I didn't find it!"
-        InvalidLanguageNameType invalidType ->
+        InvalidNameType invalidType ->
             "I was expecting the \"name\" field on the language config to be a \"string\" , but it was of type " <>
             PMisc.jsonValueToText invalidType <>
             "."
-        InvalidLanguageNameValue invalidValue ->
-            "I was expecting the \"name\" field on the language config to be \"" <>
-            elmLanguageJsonValue <>
+        InvalidNameValue invalidValue ->
+            "I was expecting the \"name\" field on the language config to be \"" <> elmJsonValue <>
             "\" or \"" <>
-            reasonLanguageJsonValue <>
+            reasonJsonValue <>
             "\", but it was \"" <>
             invalidValue <>
             "\"."
-        MissingLanguageOutputPath languageName ->
+        MissingOutputPath languageName ->
             "I was expecting the \"outputPath\" field to exist on the language config for \"" <>
             languageName <>
             "\", but I didn't find it!"
-        InvalidLanguageOutputPathType invalidType languageName ->
+        InvalidOutputPathType invalidType languageName ->
             "I was expecting the \"outputPath\" field on the language config for \"" <> languageName <>
             "\" to be a \"string\" , but it was of type " <>
             PMisc.jsonValueToText invalidType <>

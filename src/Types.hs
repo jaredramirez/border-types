@@ -1,5 +1,5 @@
 module Types
-    ( Config(..)
+    ( RootConfig(..)
     , LanguageConfig(..)
     , CustomType(..)
     , PrimitiveType(..)
@@ -8,7 +8,7 @@ module Types
 import qualified Data.HashMap.Strict as HashMap
 import qualified Data.Text as Text
 
-data Config = Config
+data RootConfig = RootConfig
     { langauges :: [LanguageConfig]
     , types :: [CustomType]
     } deriving (Show, Eq)

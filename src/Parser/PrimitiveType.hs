@@ -1,10 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Parser.PrimitiveType
-    ( parsePrimitiveType
-    , primitiveTypeParser
-    , displayPrimitiveTypeParserError
-    , TypeParseError
+    ( parseString
+    , parseJsonValue
+    , displayParseError
+    , ParseError
     ) where
 
 import qualified Data.Aeson as JsonBase
@@ -19,18 +19,17 @@ import qualified Data.Vector as Vector
 import qualified Parser.Misc as PMisc
 import qualified Types
 
-parsePrimitiveType :: BS.ByteString -> Either String Types.PrimitiveType
-parsePrimitiveType = JsonBase.eitherDecode
+parseString :: BS.ByteString -> Either String Types.PrimitiveType
+parseString = JsonBase.eitherDecode
 
 instance JsonTypes.FromJSON Types.PrimitiveType where
-    parseJSON =
-        Json.toAesonParser displayPrimitiveTypeParserError (Json.withValue primitiveTypeParser)
+    parseJSON = Json.toAesonParser displayParseError (Json.withValue parseJsonValue)
 
-data TypeParseError
-    = UnknownPrimitiveType Text.Text
-    | UnknownPrimitiveTypeWithGuess Text.Text
-                                    Text.Text
-    | InvalidPrimitiveType JsonTypes.Value
+data ParseError
+    = UnknownType Text.Text
+    | UnknownTypeWithGuess Text.Text
+                           Text.Text
+    | InvalidType JsonTypes.Value
     deriving (Show)
 
 intJsonKey :: Text.Text
@@ -50,8 +49,8 @@ typeMisspellings :: [(Text.Text, Text.Text)]
 typeMisspellings =
     [("Int", intJsonKey), ("Float", floatJsonKey), ("Bool", boolJsonKey), ("String", stringJsonKey)]
 
-primitiveTypeParser :: JsonTypes.Value -> Either TypeParseError Types.PrimitiveType
-primitiveTypeParser value =
+parseJsonValue :: JsonTypes.Value -> Either ParseError Types.PrimitiveType
+parseJsonValue value =
     case value of
         (JsonTypes.String s)
             | s == intJsonKey -> Right Types.Int
@@ -60,24 +59,24 @@ primitiveTypeParser value =
             | s == stringJsonKey -> Right Types.String
             | otherwise ->
                 case List.find ((==) s . fst) typeMisspellings of
-                    Just (_, guess) -> Left $ UnknownPrimitiveTypeWithGuess s guess
-                    Nothing -> Left $ UnknownPrimitiveType s
+                    Just (_, guess) -> Left $ UnknownTypeWithGuess s guess
+                    Nothing -> Left $ UnknownType s
         (JsonTypes.Array v) ->
             let list = Vector.toList v
             in case list of
                    [] -> Right Types.Unit
-                   [listValue] -> primitiveTypeParser listValue >>= (Right . Types.List)
-                   tupleValues -> traverse primitiveTypeParser tupleValues >>= (Right . Types.Tuple)
+                   [listValue] -> parseJsonValue listValue >>= (Right . Types.List)
+                   tupleValues -> traverse parseJsonValue tupleValues >>= (Right . Types.Tuple)
         (JsonTypes.Object o) ->
-            let (keys, values) = unzip $ HashMap.toList $ HashMap.map primitiveTypeParser o
+            let (keys, values) = unzip $ HashMap.toList $ HashMap.map parseJsonValue o
                 map = fmap (Types.Record . HashMap.fromList . zip keys) (sequence values)
             in map
-        invalid -> Left $ InvalidPrimitiveType invalid
+        invalid -> Left $ InvalidType invalid
 
-displayPrimitiveTypeParserError :: TypeParseError -> Text.Text
-displayPrimitiveTypeParserError err =
+displayParseError :: ParseError -> Text.Text
+displayParseError err =
     case err of
-        UnknownPrimitiveType invalidType ->
+        UnknownType invalidType ->
             "I was expecting one of \"" <> intJsonKey <> "\", \"" <> floatJsonKey <> "\", \"" <>
             boolJsonKey <>
             "\", \"" <>
@@ -85,10 +84,10 @@ displayPrimitiveTypeParserError err =
             "\" or an object, but got \"" <>
             invalidType <>
             "\" instead."
-        UnknownPrimitiveTypeWithGuess invalidType guess ->
+        UnknownTypeWithGuess invalidType guess ->
             "I got \"" <> invalidType <> "\" as a field type, which is invalid. Did you mean \"" <>
             guess <>
             "\"?"
-        InvalidPrimitiveType invalidType ->
+        InvalidType invalidType ->
             "I was expecting a string or object type, but got " <> PMisc.jsonValueToText invalidType <>
             "."

@@ -29,7 +29,7 @@ spec =
                     expected =
                         errorPrefix ++
                         "I was expecting the \"name\" field to exists on the language config, but I didn't find it!\n"
-                in P.parseLanguageConfig json `shouldBe` Left expected
+                in P.parseString json `shouldBe` Left expected
             it "if the \"name\" field is an invalid type" $
                 let json =
                         "{\n\
@@ -39,7 +39,7 @@ spec =
                     expected =
                         errorPrefix ++
                         "I was expecting the \"name\" field on the language config to be a \"string\" , but it was of type Bool.\n"
-                in P.parseLanguageConfig json `shouldBe` Left expected
+                in P.parseString json `shouldBe` Left expected
             it "if the \"name\" field is invalid" $
                 let json =
                         "{\n\
@@ -49,7 +49,7 @@ spec =
                     expected =
                         errorPrefix ++
                         "I was expecting the \"name\" field on the language config to be \"elm\" or \"reason\", but it was \"pink\".\n"
-                in P.parseLanguageConfig json `shouldBe` Left expected
+                in P.parseString json `shouldBe` Left expected
             it "if the \"outputPath\" field is missing" $
                 let json =
                         "{\n\
@@ -58,7 +58,7 @@ spec =
                     expected =
                         errorPrefix ++
                         "I was expecting the \"outputPath\" field to exist on the language config for \"reason\", but I didn't find it!\n"
-                in P.parseLanguageConfig json `shouldBe` Left expected
+                in P.parseString json `shouldBe` Left expected
             it "if the \"outputPath\" field is an invalid type" $
                 let json =
                         "{\n\
@@ -68,7 +68,7 @@ spec =
                     expected =
                         errorPrefix ++
                         "I was expecting the \"outputPath\" field on the language config for \"reason\" to be a \"string\" , but it was of type Array.\n"
-                in P.parseLanguageConfig json `shouldBe` Left expected
+                in P.parseString json `shouldBe` Left expected
         describe "should successfully parse" $ do
             it "the elm language config" $
                 let json =
@@ -77,7 +77,7 @@ spec =
                     \   \"outputPath\": \"./hello/world\"\n\
                     \}"
                     expected = Types.ElmConfig "./hello/world"
-                in P.parseLanguageConfig json `shouldBe` Right expected
+                in P.parseString json `shouldBe` Right expected
             it "the reason language config" $
                 let json =
                         "{\n\
@@ -85,4 +85,4 @@ spec =
                     \   \"outputPath\": \"./hello/world\"\n\
                     \}"
                     expected = Types.ReasonConfig "./hello/world"
-                in P.parseLanguageConfig json `shouldBe` Right expected
+                in P.parseString json `shouldBe` Right expected

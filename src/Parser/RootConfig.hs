@@ -1,10 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Parser.RootConfig
-    ( parseConfig
-    , configParser
-    , displayConfigParseError
-    , ConfigParseError
+    ( parseString
+    , parseJsonObject
+    , displayParseError
+    , ParseError
     ) where
 
 import qualified Data.Aeson as JsonBase
@@ -22,94 +22,90 @@ import qualified Parser.LanguageConfig as LanguageConfigParser
 import qualified Parser.Misc as PMisc
 import qualified Types
 
-parseConfig :: BS.ByteString -> Either String Types.Config
-parseConfig = JsonBase.eitherDecode
+parseString :: BS.ByteString -> Either String Types.RootConfig
+parseString = JsonBase.eitherDecode
 
-instance JsonTypes.FromJSON Types.Config where
-    parseJSON = Json.toAesonParser displayConfigParseError (Json.withObject configParser)
+instance JsonTypes.FromJSON Types.RootConfig where
+    parseJSON = Json.toAesonParser displayParseError (Json.withObject parseJsonObject)
 
-data ConfigParseError
-    = MissingConfigLangauges
-    | InvalidConfigLangaugesType JsonTypes.Value
-    | InvalidConfigLangaugesChildType JsonTypes.Value
-    | InvalidConfigLangauges LanguageConfigParser.LanguageConfigParseError
-    | MissingConfigTypes
-    | InvalidConfigTypesType JsonTypes.Value
-    | InvalidConfigTypesChildType JsonTypes.Value
-    | InvalidConfigTypes CustomTypeParser.CustomTypeParseError
+data ParseError
+    = MissingLangauges
+    | InvalidLangaugesType JsonTypes.Value
+    | InvalidLangaugesChildType JsonTypes.Value
+    | InvalidLangauges LanguageConfigParser.ParseError
+    | MissingTypes
+    | InvalidTypesType JsonTypes.Value
+    | InvalidTypesChildType JsonTypes.Value
+    | InvalidTypes CustomTypeParser.ParseError
 
-configLanguagesJsonKey :: Text.Text
-configLanguagesJsonKey = "languages"
+languagesJsonKey :: Text.Text
+languagesJsonKey = "languages"
 
-configTypesJsonKey :: Text.Text
-configTypesJsonKey = "types"
+typesJsonKey :: Text.Text
+typesJsonKey = "types"
 
-configParser :: JsonTypes.Object -> Either ConfigParseError Types.Config
-configParser o =
-    let maybeLanguages = HashMap.lookup configLanguagesJsonKey o
-        maybeTypes = HashMap.lookup configTypesJsonKey o
-    in case (maybeLanguages, maybeTypes) of
+parseJsonObject :: JsonTypes.Object -> Either ParseError Types.RootConfig
+parseJsonObject o =
+    let maybeLanguagesValue = HashMap.lookup languagesJsonKey o
+        maybeTypesValue = HashMap.lookup typesJsonKey o
+    in case (maybeLanguagesValue, maybeTypesValue) of
            (Just languagesValue, Just typesValue) ->
                let eitherLanguages = languagesParser languagesValue
                    eitherTypes = typesParser typesValue
-               in Types.Config <$> eitherLanguages <*> eitherTypes
-           (Nothing, _) -> Left MissingConfigLangauges
-           (_, Nothing) -> Left MissingConfigTypes
+               in Types.RootConfig <$> eitherLanguages <*> eitherTypes
+           (Nothing, _) -> Left MissingLangauges
+           (_, Nothing) -> Left MissingTypes
 
-languagesParser :: JsonTypes.Value -> Either ConfigParseError [Types.LanguageConfig]
+languagesParser :: JsonTypes.Value -> Either ParseError [Types.LanguageConfig]
 languagesParser value =
     case value of
         (JsonTypes.Array v) ->
-            let objectsList = traverse (toObject InvalidConfigLangaugesChildType) $ Vector.toList v
+            let objectsList = traverse (toObject InvalidLangaugesChildType) $ Vector.toList v
             in objectsList >>=
-               (Misc.mapLeft InvalidConfigLangauges .
-                traverse LanguageConfigParser.languageConfigParser)
-        invalid -> Left (InvalidConfigLangaugesType invalid)
+               (Misc.mapLeft InvalidLangauges . traverse LanguageConfigParser.parseJsonObject)
+        invalid -> Left (InvalidLangaugesType invalid)
 
-typesParser :: JsonTypes.Value -> Either ConfigParseError [Types.CustomType]
+typesParser :: JsonTypes.Value -> Either ParseError [Types.CustomType]
 typesParser value =
     case value of
         (JsonTypes.Array v) ->
-            let objectsList = traverse (toObject InvalidConfigTypesChildType) $ Vector.toList v
+            let objectsList = traverse (toObject InvalidTypesChildType) $ Vector.toList v
             in objectsList >>=
-               (Misc.mapLeft InvalidConfigTypes . traverse CustomTypeParser.customTypeParser)
-        invalid -> Left (InvalidConfigTypesType invalid)
+               (Misc.mapLeft InvalidTypes . traverse CustomTypeParser.parseJsonObject)
+        invalid -> Left (InvalidTypesType invalid)
 
-toObject ::
-       (JsonTypes.Value -> ConfigParseError)
-    -> JsonTypes.Value
-    -> Either ConfigParseError JsonTypes.Object
+toObject :: (JsonTypes.Value -> ParseError) -> JsonTypes.Value -> Either ParseError JsonTypes.Object
 toObject toError value =
     case value of
         (JsonTypes.Object o) -> Right o
         invalid -> Left (toError invalid)
 
-displayConfigParseError :: ConfigParseError -> Text.Text
-displayConfigParseError err =
+displayParseError :: ParseError -> Text.Text
+displayParseError err =
     case err of
-        MissingConfigLangauges ->
+        MissingLangauges ->
             "I was expecting the \"langauges\" field to exists on the root config, but I didn't find it!"
-        InvalidConfigLangaugesType invalidType ->
+        InvalidLangaugesType invalidType ->
             "I was expecting the \"langauges\" field to be an array, but it was of type " <>
             PMisc.jsonValueToText invalidType <>
             "."
-        InvalidConfigLangaugesChildType invalidChildTypes ->
+        InvalidLangaugesChildType invalidChildTypes ->
             "I was expecting the \"langauges\" field to be an array of language config objecs, but one of the children was of type " <>
             PMisc.jsonValueToText invalidChildTypes <>
             "."
-        InvalidConfigLangauges childError ->
+        InvalidLangauges childError ->
             "There's an issue with one the language config objects. " <>
-            LanguageConfigParser.displayLanguageConfigParseError childError
-        MissingConfigTypes ->
+            LanguageConfigParser.displayParseError childError
+        MissingTypes ->
             "I was expecting the \"types\" field to exists on the root config, but I didn't find it!"
-        InvalidConfigTypesType invalidType ->
+        InvalidTypesType invalidType ->
             "I was expecting the \"types\" field to be an array, but it was of type " <>
             PMisc.jsonValueToText invalidType <>
             "."
-        InvalidConfigTypesChildType invalidChildTypes ->
+        InvalidTypesChildType invalidChildTypes ->
             "I was expecting the \"types\" field to be an array of type definitons, but one of the children was of type " <>
             PMisc.jsonValueToText invalidChildTypes <>
             "."
-        InvalidConfigTypes childError ->
+        InvalidTypes childError ->
             "There's an issue with one the type definitions in the \"types\" field. " <>
-            CustomTypeParser.displayCustomTypeParserError childError
+            CustomTypeParser.displayParseError childError

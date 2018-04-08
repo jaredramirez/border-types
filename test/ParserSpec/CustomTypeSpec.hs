@@ -30,7 +30,7 @@ spec =
                     expected =
                         errorPrefix ++
                         "I was expecting the \"name\" field to exist on the alias/union type, but I didn't find it!\n"
-                in P.parseCustomType json `shouldBe` Left expected
+                in P.parseString json `shouldBe` Left expected
             it "if the name field is an invalid type" $
                 let json =
                         "{\n\
@@ -41,7 +41,7 @@ spec =
                     expected =
                         errorPrefix ++
                         "I was expecting the \"name\" field on the alias/union type to be of type \"string\", but it was Bool.\n"
-                in P.parseCustomType json `shouldBe` Left expected
+                in P.parseString json `shouldBe` Left expected
             it "kind field is missing" $
                 let json =
                         "{\n\
@@ -51,7 +51,7 @@ spec =
                     expected =
                         errorPrefix ++
                         "I was expecting the \"kind\" field to exist on the alias/union type, but I didn't find it!\n"
-                in P.parseCustomType json `shouldBe` Left expected
+                in P.parseString json `shouldBe` Left expected
             describe "an alias type" $ do
                 it "if value field is missing" $
                     let json =
@@ -62,7 +62,7 @@ spec =
                         expected =
                             errorPrefix ++
                             "I was expecting the \"value\" field to exist on the alias type \"hello\", but I didn't find it!\n"
-                    in P.parseCustomType json `shouldBe` Left expected
+                    in P.parseString json `shouldBe` Left expected
                 it "if value field is an invalid type" $
                     let json =
                             "{\n\
@@ -73,7 +73,7 @@ spec =
                         expected =
                             errorPrefix ++
                             "There's an issue in the alias type \"bad\". I was expecting one of \"int\", \"float\", \"bool\", \"string\" or an object, but got \"abcdefg\" instead.\n"
-                    in P.parseCustomType json `shouldBe` Left expected
+                    in P.parseString json `shouldBe` Left expected
             describe "a union type" $ do
                 it "if the constructors field is not an object" $
                     let json =
@@ -85,7 +85,7 @@ spec =
                         expected =
                             errorPrefix ++
                             "On the \"bad\" union type, I was expecting the \"constructors\" field to be a record, but it was of type String.\n"
-                    in P.parseCustomType json `shouldBe` Left expected
+                    in P.parseString json `shouldBe` Left expected
                 it "if not all constructors have valid primitive types" $
                     let json =
                             "{\n\
@@ -101,7 +101,7 @@ spec =
                         expected =
                             errorPrefix ++
                             "There's an issue with one of the constructor values on the union type \"Bad\". I was expecting one of \"int\", \"float\", \"bool\", \"string\" or an object, but got \"ugh\" instead.\n"
-                    in P.parseCustomType json `shouldBe` Left expected
+                    in P.parseString json `shouldBe` Left expected
         describe "should successfully parse" $ do
             it "an alias type" $
                 let json =
@@ -111,7 +111,7 @@ spec =
                         \   \"value\": \"string\"\n\
                         \}"
                     expected = Types.Alias "hello" Types.String
-                in P.parseCustomType json `shouldBe` Right expected
+                in P.parseString json `shouldBe` Right expected
             it "a union type" $
                 let json =
                         "{\n\
@@ -135,4 +135,4 @@ spec =
                                  , ( "Good"
                                    , [Types.Record (HashMap.fromList [("hello", Types.String)])])
                                  ])
-                in P.parseCustomType json `shouldBe` Right expected
+                in P.parseString json `shouldBe` Right expected
