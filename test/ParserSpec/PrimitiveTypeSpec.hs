@@ -20,6 +20,38 @@ errorPrefix = "Error in $: "
 spec :: Hspec.Spec
 spec =
     describe "primitives parser" $ do
+        describe "should fail to parse" $ do
+            it "an invalid type" $
+                P.parseString "\"dog\"" `shouldBe`
+                Left
+                    (errorPrefix ++
+                     "I was expecting one of \"int\", \"float\", \"bool\", \"string\" or an object, but got \"dog\" instead.\n")
+            it "an x-tuple if it has an invalid sub-type" $
+                P.parseString "[\"string\", \"ugh\"]" `shouldBe`
+                Left
+                    (errorPrefix ++
+                     "I was expecting one of \"int\", \"float\", \"bool\", \"string\" or an object, but got \"ugh\" instead.\n")
+            it "a record with an invalid key naem" $
+                let json =
+                        "{\n\
+                        \   \"Hello\": \"string\"\n\
+                        \}"
+                    expected =
+                        errorPrefix ++
+                        "I was each key on a record to start with a lowercase letter, but I got the following keys: \"Hello\".\n"
+                in P.parseString json `shouldBe` Left expected
+            it "a nested record with invalid sub-type" $
+                let json =
+                        "{\n\
+                        \   \"hello\": \"string\",\n\
+                        \   \"world\": {\n\
+                        \       \"foo\": \"bar\"\n\
+                        \   }\n\
+                        \}"
+                    expected =
+                        errorPrefix ++
+                        "I was expecting one of \"int\", \"float\", \"bool\", \"string\" or an object, but got \"bar\" instead.\n"
+                in P.parseString json `shouldBe` Left expected
         describe "should successfully to parse" $ do
             it "a string" $ P.parseString "\"string\"" `shouldBe` Right Types.String
             it "a int" $ P.parseString "\"int\"" `shouldBe` Right Types.Int
@@ -77,26 +109,3 @@ spec =
                         HashMap.fromList
                             [("hello", Types.String), ("world", Types.Record (HashMap.fromList []))]
                 in P.parseString json `shouldBe` Right (Types.Record expected)
-        describe "should fail to parse" $ do
-            it "an invalid type" $
-                P.parseString "\"dog\"" `shouldBe`
-                Left
-                    (errorPrefix ++
-                     "I was expecting one of \"int\", \"float\", \"bool\", \"string\" or an object, but got \"dog\" instead.\n")
-            it "an x-tuple if it has an invalid sub-type" $
-                P.parseString "[\"string\", \"ugh\"]" `shouldBe`
-                Left
-                    (errorPrefix ++
-                     "I was expecting one of \"int\", \"float\", \"bool\", \"string\" or an object, but got \"ugh\" instead.\n")
-            it "a nested record with invalid sub-type" $
-                let json =
-                        "{\n\
-                \   \"hello\": \"string\",\n\
-                \   \"world\": {\n\
-                \       \"foo\": \"bar\"\n\
-                \   }\n\
-                \}"
-                    expected =
-                        errorPrefix ++
-                        "I was expecting one of \"int\", \"float\", \"bool\", \"string\" or an object, but got \"bar\" instead.\n"
-                in P.parseString json `shouldBe` Left expected

@@ -11,6 +11,7 @@ import qualified Data.Aeson as JsonBase
 import qualified Data.Aeson.BetterErrors as Json
 import qualified Data.Aeson.Types as JsonTypes
 import qualified Data.ByteString.Lazy as BS
+import qualified Data.Char as Char
 import qualified Data.HashMap.Strict as HashMap
 import qualified Data.List as List
 import Data.Semigroup ((<>))
@@ -27,6 +28,7 @@ instance JsonTypes.FromJSON Types.PrimitiveType where
 
 data ParseError
     = UnknownType Text.Text
+    | InvalidRecordKeys [Text.Text]
     | InvalidType JsonTypes.Value
     deriving (Show)
 
@@ -59,9 +61,13 @@ parseJsonValue value =
                    tupleValues -> traverse parseJsonValue tupleValues >>= (Right . Types.Tuple)
         (JsonTypes.Object o) ->
             let (keys, values) = unzip $ HashMap.toList $ HashMap.map parseJsonValue o
-                map = fmap (Types.Record . HashMap.fromList . zip keys) (sequence values)
-            in map
+            in case List.filter (not . startsWithLowercaseLetter) keys of
+                   [] -> fmap (Types.Record . HashMap.fromList . zip keys) (sequence values)
+                   invalidKeys -> Left (InvalidRecordKeys invalidKeys)
         invalid -> Left $ InvalidType invalid
+
+startsWithLowercaseLetter :: Text.Text -> Bool
+startsWithLowercaseLetter = maybe False (Char.isLower . fst) . Text.uncons
 
 displayParseError :: ParseError -> Text.Text
 displayParseError err =
@@ -74,6 +80,10 @@ displayParseError err =
             "\" or an object, but got \"" <>
             invalidType <>
             "\" instead."
+        InvalidRecordKeys invalidKeys ->
+            "I was each key on a record to start with a lowercase letter, but I got the following keys: " <>
+            (Text.intercalate ", " $ List.map (\k -> "\"" <> k <> "\"") invalidKeys) <>
+            "."
         InvalidType invalidType ->
             "I was expecting a string or object type, but got " <> PMisc.jsonValueToText invalidType <>
             "."
