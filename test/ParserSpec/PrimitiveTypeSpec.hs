@@ -83,11 +83,6 @@ spec =
                 Left
                     (errorPrefix ++
                      "I was expecting one of \"int\", \"float\", \"bool\", \"string\" or an object, but got \"dog\" instead.\n")
-            it "an invalid type, but provide a guess" $
-                P.parseString "\"Int\"" `shouldBe`
-                Left
-                    (errorPrefix ++
-                     "I got \"Int\" as a field type, which is invalid. Did you mean \"int\"?\n")
             it "an x-tuple if it has an invalid sub-type" $
                 P.parseString "[\"string\", \"ugh\"]" `shouldBe`
                 Left

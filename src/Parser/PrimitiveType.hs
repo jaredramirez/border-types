@@ -27,40 +27,30 @@ instance JsonTypes.FromJSON Types.PrimitiveType where
 
 data ParseError
     = UnknownType Text.Text
-    | UnknownTypeWithGuess Text.Text
-                           Text.Text
     | InvalidType JsonTypes.Value
     deriving (Show)
 
-intJsonKey :: Text.Text
-intJsonKey = "int"
+intJsonValue :: Text.Text
+intJsonValue = "int"
 
-floatJsonKey :: Text.Text
-floatJsonKey = "float"
+floatJsonValue :: Text.Text
+floatJsonValue = "float"
 
-boolJsonKey :: Text.Text
-boolJsonKey = "bool"
+boolJsonValue :: Text.Text
+boolJsonValue = "bool"
 
-stringJsonKey :: Text.Text
-stringJsonKey = "string"
-
--- This method is pretty primative, it should probably be improved
-typeMisspellings :: [(Text.Text, Text.Text)]
-typeMisspellings =
-    [("Int", intJsonKey), ("Float", floatJsonKey), ("Bool", boolJsonKey), ("String", stringJsonKey)]
+stringJsonValue :: Text.Text
+stringJsonValue = "string"
 
 parseJsonValue :: JsonTypes.Value -> Either ParseError Types.PrimitiveType
 parseJsonValue value =
     case value of
         (JsonTypes.String s)
-            | s == intJsonKey -> Right Types.Int
-            | s == floatJsonKey -> Right Types.Float
-            | s == boolJsonKey -> Right Types.Bool
-            | s == stringJsonKey -> Right Types.String
-            | otherwise ->
-                case List.find ((==) s . fst) typeMisspellings of
-                    Just (_, guess) -> Left $ UnknownTypeWithGuess s guess
-                    Nothing -> Left $ UnknownType s
+            | s == intJsonValue -> Right Types.Int
+            | s == floatJsonValue -> Right Types.Float
+            | s == boolJsonValue -> Right Types.Bool
+            | s == stringJsonValue -> Right Types.String
+            | otherwise -> Left $ UnknownType s
         (JsonTypes.Array v) ->
             let list = Vector.toList v
             in case list of
@@ -77,17 +67,13 @@ displayParseError :: ParseError -> Text.Text
 displayParseError err =
     case err of
         UnknownType invalidType ->
-            "I was expecting one of \"" <> intJsonKey <> "\", \"" <> floatJsonKey <> "\", \"" <>
-            boolJsonKey <>
+            "I was expecting one of \"" <> intJsonValue <> "\", \"" <> floatJsonValue <> "\", \"" <>
+            boolJsonValue <>
             "\", \"" <>
-            stringJsonKey <>
+            stringJsonValue <>
             "\" or an object, but got \"" <>
             invalidType <>
             "\" instead."
-        UnknownTypeWithGuess invalidType guess ->
-            "I got \"" <> invalidType <> "\" as a field type, which is invalid. Did you mean \"" <>
-            guess <>
-            "\"?"
         InvalidType invalidType ->
             "I was expecting a string or object type, but got " <> PMisc.jsonValueToText invalidType <>
             "."
