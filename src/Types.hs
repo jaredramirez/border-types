@@ -1,37 +1,37 @@
 module Types
-    ( RootConfig(..)
-    , LanguageConfig(..)
-    , CustomType(..)
-    , PrimitiveType(..)
-    ) where
+  ( RootConfig(..)
+  , LanguageConfig(..)
+  , CustomType(..)
+  , PrimitiveType(..)
+  ) where
 
 import qualified Data.HashMap.Strict as HashMap
-import qualified Data.Text as Text
+import qualified Data.Text           as Text
 
 data RootConfig = RootConfig
-    { langauges :: [LanguageConfig]
-    , types :: [CustomType]
-    } deriving (Show, Eq)
+  { langauges :: [LanguageConfig]
+  , types     :: [CustomType]
+  } deriving (Show, Eq)
 
 data LanguageConfig
-    = ElmConfig { outputPath :: Text.Text }
-    | ReasonConfig { outputPath :: Text.Text }
-    deriving (Show, Eq)
+  = ElmConfig { outputPath :: Text.Text }
+  | ReasonConfig { outputPath :: Text.Text }
+  deriving (Show, Eq)
 
 data CustomType
-    = Alias { name :: Text.Text
-            , value :: PrimitiveType }
-    | Union { name :: Text.Text
-            , constructors :: HashMap.HashMap Text.Text [PrimitiveType] }
-    deriving (Show, Eq)
+  = Alias { name  :: Text.Text
+          , value :: PrimitiveType }
+  | Union { name         :: Text.Text
+          , constructors :: HashMap.HashMap Text.Text [PrimitiveType] }
+  deriving (Show, Eq)
 
 data PrimitiveType
-    = String
-    | Int
-    | Float
-    | Bool
-    | Unit
-    | List PrimitiveType
-    | Tuple [PrimitiveType]
-    | Record (HashMap.HashMap Text.Text PrimitiveType)
-    deriving (Show, Eq)
+  = String
+  | Int
+  | Float
+  | Bool
+  | Unit
+  | List PrimitiveType
+  | Tuple [PrimitiveType]
+  | Record (HashMap.HashMap Text.Text PrimitiveType)
+  deriving (Show, Eq)
