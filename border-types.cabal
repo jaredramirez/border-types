@@ -30,6 +30,7 @@ executable border-types
                      , Parser.LanguageConfig
                      , Parser.RootConfig
                      , Parser.Misc
+                     , Generate.Reason
                      , Misc
 
 -- FOR TESTING
@@ -49,6 +50,7 @@ library
                      , Parser.LanguageConfig
                      , Parser.RootConfig
                      , Parser.Misc
+                     , Generate.Reason
                      , Misc
 
 test-suite tests
@@ -70,3 +72,4 @@ test-suite tests
                      , ParserSpec.CustomTypeSpec
                      , ParserSpec.LanguageConfigSpec
                      , ParserSpec.RootConfigSpec
+                     , GenerateSpec.ReasonSpec

@@ -1,12 +1,20 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 module Types
-  ( RootConfig(..)
+  ( TypeString(..)
+  , RootConfig(..)
   , LanguageConfig(..)
   , CustomType(..)
   , PrimitiveType(..)
   ) where
 
 import qualified Data.HashMap.Strict as HashMap
+import qualified Data.Semigroup
 import qualified Data.Text           as Text
+
+newtype TypeString =
+  TypeString Text.Text
+  deriving (Eq, Show, Data.Semigroup.Semigroup)
 
 data RootConfig = RootConfig
   { langauges :: [LanguageConfig]
