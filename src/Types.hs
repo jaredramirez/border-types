@@ -8,6 +8,7 @@ module Types
   , PrimitiveType(..)
   ) where
 
+import qualified Control.Monad
 import qualified Data.HashMap.Strict as HashMap
 import qualified Data.Semigroup
 import qualified Data.Text           as Text

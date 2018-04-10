@@ -36,9 +36,29 @@ spec =
            HashMap.fromList [("hello", Types.String), ("world", Types.Int)]) `shouldBe`
         Types.TypeString
           "{.\n\
-          \  world: int,\n\
-          \  hello: string\
+          \  \"world\": int,\n\
+          \  \"hello\": string\n\
           \}"
     describe "custom types" $ do
-      it "one" $ True `shouldBe` True
-      it "two" $ True `shouldBe` True
+      it "should generate alias type" $
+        GenReason.toCustomType
+          (Types.Alias
+             "Hello"
+             (Types.Record $
+              HashMap.fromList [("hello", Types.String), ("world", Types.Int)])) `shouldBe`
+        Types.TypeString
+          "type hello = {.\n\
+          \  \"world\": int,\n\
+          \  \"hello\": string\n\
+          \}"
+      it "should generate union type" $
+        GenReason.toCustomType
+          (Types.Union
+             "Status"
+             (HashMap.fromList
+                [("Good", [Types.String]), ("Okay", []), ("Bad", [Types.Int])])) `shouldBe`
+        Types.TypeString
+          "type status =\n\
+          \  | Okay\n\
+          \  | Bad(int)\n\
+          \  | Good(string);"

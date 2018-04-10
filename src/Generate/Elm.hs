@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Generate.Reason
+module Generate.Elm
   ( toCustomType
   , toPrimitiveType
   ) where
@@ -16,7 +16,7 @@ import           Types               (CustomType, PrimitiveType, TypeString)
 import qualified Types
 
 tab :: Text
-tab = "  "
+tab = "    "
 
 toCustomType :: CustomType -> TypeString
 toCustomType customType =
@@ -28,9 +28,9 @@ unionType :: Text -> HashMap Text [PrimitiveType] -> TypeString
 unionType name subTypes =
   let constructors = HashMap.toList subTypes
   in Types.TypeString $
-     "type " <> Text.toLower name <> " =\n" <>
-     (flip Text.snoc ';' .
-      Text.concat . List.intersperse "\n" . fmap toConstructors)
+     "type " <> name <> "\n" <>
+     (Text.append (tab <> "=") .
+      Text.drop 5 . Text.concat . List.intersperse "\n" . fmap toConstructors)
        constructors
 
 toConstructors :: (Text, [PrimitiveType]) -> Text
@@ -38,14 +38,22 @@ toConstructors (name, types) =
   tab <> "| " <> name <>
   (if List.null types
      then ""
-     else "(" <>
-          Text.intercalate ", " (fmap (Misc.extract . toPrimitiveType) types) <>
-          ")")
+     else " " <>
+          Text.intercalate " " (fmap (Misc.extract . toPrimitiveType) types))
 
 aliasType :: Text -> PrimitiveType -> TypeString
 aliasType name subType =
-  (Types.TypeString $ "type " <> Text.toLower name <> " = ") <>
-  toPrimitiveType subType
+  let subTypeString = toPrimitiveType subType
+  in (Types.TypeString $ "type alias " <> name <> " =") <>
+     case subType of
+       Types.Record _ -> Types.TypeString "\n" <> indent subTypeString
+       _              -> Types.TypeString " " <> subTypeString
+
+indent :: TypeString -> TypeString
+indent =
+  Types.TypeString .
+  Text.dropEnd 1 .
+  Text.unlines . fmap (Text.append tab) . Text.lines . Misc.extract
 
 toPrimitiveType :: PrimitiveType -> TypeString
 toPrimitiveType type' =
@@ -60,22 +68,22 @@ toPrimitiveType type' =
     Types.Record subTypes -> record (HashMap.map toPrimitiveType subTypes)
 
 string :: TypeString
-string = Types.TypeString "string"
+string = Types.TypeString "String"
 
 int :: TypeString
-int = Types.TypeString "int"
+int = Types.TypeString "Int"
 
 float :: TypeString
-float = Types.TypeString "float"
+float = Types.TypeString "Float"
 
 bool :: TypeString
-bool = Types.TypeString "bool"
+bool = Types.TypeString "Bool"
 
 unit :: TypeString
-unit = Types.TypeString "unit"
+unit = Types.TypeString "()"
 
 list :: TypeString -> TypeString
-list subType = Types.TypeString "list(" <> subType <> Types.TypeString ")"
+list subType = Types.TypeString "(List " <> subType <> Types.TypeString ")"
 
 tuple :: [TypeString] -> TypeString
 tuple subTypes =
@@ -85,10 +93,10 @@ tuple subTypes =
 record :: HashMap Text TypeString -> TypeString
 record subTypes =
   Types.TypeString $
-  "{.\n" <>
+  "{ " <>
   Text.intercalate
-    ",\n"
+    ", "
     (fmap
-       (\(key, value) -> tab <> "\"" <> key <> "\": " <> Misc.extract value)
+       (\(key, value) -> key <> " : " <> Misc.extract value <> "\n")
        (HashMap.toList subTypes)) <>
-  "\n}"
+  "}"

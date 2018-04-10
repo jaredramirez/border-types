@@ -31,6 +31,7 @@ executable border-types
                      , Parser.RootConfig
                      , Parser.Misc
                      , Generate.Reason
+                     , Generate.Elm
                      , Misc
 
 -- FOR TESTING
@@ -51,6 +52,7 @@ library
                      , Parser.RootConfig
                      , Parser.Misc
                      , Generate.Reason
+                     , Generate.Elm
                      , Misc
 
 test-suite tests
@@ -73,3 +75,4 @@ test-suite tests
                      , ParserSpec.LanguageConfigSpec
                      , ParserSpec.RootConfigSpec
                      , GenerateSpec.ReasonSpec
+                     , GenerateSpec.ElmSpec
