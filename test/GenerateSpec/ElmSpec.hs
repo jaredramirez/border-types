@@ -15,6 +15,10 @@ main = Hspec.hspec spec
 spec :: Hspec.Spec
 spec =
   describe "elm type generation" $ do
+    describe "module" $
+      it "should generate string" $
+      GenElm.toModule "Hello" `shouldBe`
+      Types.TypeString "module Hello exposing (..)\n"
     describe "primitive types" $ do
       it "should generate string" $
         GenElm.toPrimitiveType Types.String `shouldBe` Types.TypeString "String"

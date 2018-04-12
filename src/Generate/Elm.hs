@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Generate.Elm
-  ( toCustomType
+  ( toModule
+  , toCustomType
   , toPrimitiveType
   ) where
 
@@ -20,6 +21,9 @@ tab = Types.TypeString "    "
 
 noTab :: TypeString
 noTab = Types.TypeString ""
+
+toModule :: Text -> TypeString
+toModule name = Types.TypeString $ "module " <> name <> " exposing (..)\n"
 
 toCustomType :: CustomType -> TypeString
 toCustomType customType =
