@@ -15,8 +15,11 @@ import qualified Misc
 import           Types               (CustomType, PrimitiveType, TypeString)
 import qualified Types
 
-tab :: Text
-tab = "    "
+tab :: TypeString
+tab = Types.TypeString "    "
+
+noTab :: TypeString
+noTab = Types.TypeString ""
 
 toCustomType :: CustomType -> TypeString
 toCustomType customType =
@@ -26,46 +29,51 @@ toCustomType customType =
 
 unionType :: Text -> HashMap Text [PrimitiveType] -> TypeString
 unionType name subTypes =
-  let constructors = HashMap.toList subTypes
-  in Types.TypeString $
-     "type " <> name <> "\n" <>
-     (Text.append (tab <> "=") .
-      Text.drop 5 . Text.concat . List.intersperse "\n" . fmap toConstructors)
-       constructors
+  Types.TypeString ("type " <> name <> "\n") <>
+  foldr
+    (\cur acc -> tab <> cur <> acc)
+    (Types.TypeString "")
+    (case HashMap.toList subTypes of
+       [] -> []
+       head:tail -> unionTypeHelper '=' head : fmap (unionTypeHelper '|') tail)
 
-toConstructors :: (Text, [PrimitiveType]) -> Text
-toConstructors (name, types) =
-  tab <> "| " <> name <>
-  (if List.null types
-     then ""
-     else " " <>
-          Text.intercalate " " (fmap (Misc.extract . toPrimitiveType) types))
+unionTypeHelper :: Char -> (Text, [PrimitiveType]) -> TypeString
+unionTypeHelper c (key, values) =
+  Types.TypeString $
+  Text.cons
+    c
+    (" " <> key <>
+     (foldr (<>) "" .
+      fmap
+        (Types.getText .
+         (\type' ->
+            case type' of
+              Types.Record subTypes ->
+                Types.TypeString "\n" <>
+                record (tab <> tab) (HashMap.map toPrimitiveType subTypes)
+              _ -> Types.TypeString " " <> toPrimitiveType type')))
+       values <>
+     "\n")
 
 aliasType :: Text -> PrimitiveType -> TypeString
 aliasType name subType =
-  let subTypeString = toPrimitiveType subType
-  in (Types.TypeString $ "type alias " <> name <> " =") <>
-     case subType of
-       Types.Record _ -> Types.TypeString "\n" <> indent subTypeString
-       _              -> Types.TypeString " " <> subTypeString
-
-indent :: TypeString -> TypeString
-indent =
-  Types.TypeString .
-  Text.dropEnd 1 .
-  Text.unlines . fmap (Text.append tab) . Text.lines . Misc.extract
+  (Types.TypeString $ "type alias " <> name <> " =\n") <>
+  toPrimitiveTypeWithTab tab subType
 
 toPrimitiveType :: PrimitiveType -> TypeString
-toPrimitiveType type' =
+toPrimitiveType = toPrimitiveTypeWithTab noTab
+
+toPrimitiveTypeWithTab :: TypeString -> PrimitiveType -> TypeString
+toPrimitiveTypeWithTab tab' type' =
   case type' of
-    Types.String          -> string
-    Types.Int             -> int
-    Types.Float           -> float
-    Types.Bool            -> bool
-    Types.Unit            -> unit
-    Types.List subType    -> list (toPrimitiveType subType)
-    Types.Tuple subTypes  -> tuple (fmap toPrimitiveType subTypes)
-    Types.Record subTypes -> record (HashMap.map toPrimitiveType subTypes)
+    Types.String -> tab' <> string
+    Types.Int -> tab' <> int
+    Types.Float -> tab' <> float
+    Types.Bool -> tab' <> bool
+    Types.Unit -> tab' <> unit
+    Types.List subType -> tab' <> list (toPrimitiveType subType)
+    Types.Tuple subTypes -> tab' <> tuple (fmap toPrimitiveType subTypes)
+    Types.Record subTypes -> record tab' (HashMap.map toPrimitiveType subTypes)
 
 string :: TypeString
 string = Types.TypeString "String"
@@ -88,15 +96,18 @@ list subType = Types.TypeString "(List " <> subType <> Types.TypeString ")"
 tuple :: [TypeString] -> TypeString
 tuple subTypes =
   Types.TypeString $
-  "(" <> Text.intercalate ", " (fmap Misc.extract subTypes) <> ")"
+  "(" <> Text.intercalate ", " (fmap Types.getText subTypes) <> ")"
 
-record :: HashMap Text TypeString -> TypeString
-record subTypes =
+record :: TypeString -> HashMap Text TypeString -> TypeString
+record tab subTypes =
+  foldr (\cur acc -> tab <> cur <> acc) (Types.TypeString "") $
+  case HashMap.toList subTypes of
+    [] -> []
+    head:tail ->
+      recordHelper '{' head :
+      fmap (recordHelper ',') tail ++ [Types.TypeString "}"]
+
+recordHelper :: Char -> (Text, TypeString) -> TypeString
+recordHelper c (key, value) =
   Types.TypeString $
-  "{ " <>
-  Text.intercalate
-    ", "
-    (fmap
-       (\(key, value) -> key <> " : " <> Misc.extract value <> "\n")
-       (HashMap.toList subTypes)) <>
-  "}"
+  Text.cons c (" " <> key <> " : " <> Types.getText value <> "\n")

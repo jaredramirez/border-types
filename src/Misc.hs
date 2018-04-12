@@ -2,7 +2,6 @@ module Misc where
 
 import qualified Control.Arrow as Arrow
 import qualified Data.Text     as Text
-import qualified Types
 
 apply :: a -> (a -> b) -> b
 apply a f = f a
@@ -12,6 +11,3 @@ apply a f = f a
 -- https://stackoverflow.com/a/13504032/8838731!
 mapLeft :: (b -> c) -> Either b a -> Either c a
 mapLeft = Arrow.left
-
-extract :: Types.TypeString -> Text.Text
-extract (Types.TypeString value) = value

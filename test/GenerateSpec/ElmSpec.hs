@@ -51,7 +51,9 @@ spec =
           \    }"
       it "should generate string type" $
         GenElm.toCustomType (Types.Alias "Hello" Types.String) `shouldBe`
-        Types.TypeString "type alias Hello = String"
+        Types.TypeString
+          "type alias Hello =\n\
+          \    String"
       it "should generate union type" $
         GenElm.toCustomType
           (Types.Union
@@ -62,4 +64,25 @@ spec =
           "type Status\n\
           \    = Okay\n\
           \    | Bad Int\n\
-          \    | Good String"
+          \    | Good String\n"
+      it "should generate union typewith record" $
+        GenElm.toCustomType
+          (Types.Union
+             "Status"
+             (HashMap.fromList
+                [ ("Good", [Types.String])
+                , ("Okay", [])
+                , ( "Bad"
+                  , [ Types.Record $
+                      HashMap.fromList
+                        [("hello", Types.String), ("world", Types.Int)]
+                    ])
+                ])) `shouldBe`
+        Types.TypeString
+          "type Status\n\
+          \    = Okay\n\
+          \    | Bad\n\
+          \        { world : Int\n\
+          \        , hello : String\n\
+          \        }\n\
+          \    | Good String\n"

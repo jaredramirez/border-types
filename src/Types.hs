@@ -13,9 +13,9 @@ import qualified Data.HashMap.Strict as HashMap
 import qualified Data.Semigroup
 import qualified Data.Text           as Text
 
-newtype TypeString =
-  TypeString Text.Text
-  deriving (Eq, Show, Data.Semigroup.Semigroup)
+newtype TypeString = TypeString
+  { getText :: Text.Text
+  } deriving (Eq, Show, Data.Semigroup.Semigroup)
 
 data RootConfig = RootConfig
   { langauges :: [LanguageConfig]

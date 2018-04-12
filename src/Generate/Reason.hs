@@ -39,7 +39,7 @@ toConstructors (name, types) =
   (if List.null types
      then ""
      else "(" <>
-          Text.intercalate ", " (fmap (Misc.extract . toPrimitiveType) types) <>
+          Text.intercalate ", " (fmap (Types.getText . toPrimitiveType) types) <>
           ")")
 
 aliasType :: Text -> PrimitiveType -> TypeString
@@ -80,7 +80,7 @@ list subType = Types.TypeString "list(" <> subType <> Types.TypeString ")"
 tuple :: [TypeString] -> TypeString
 tuple subTypes =
   Types.TypeString $
-  "(" <> Text.intercalate ", " (fmap Misc.extract subTypes) <> ")"
+  "(" <> Text.intercalate ", " (fmap Types.getText subTypes) <> ")"
 
 record :: HashMap Text TypeString -> TypeString
 record subTypes =
@@ -89,6 +89,6 @@ record subTypes =
   Text.intercalate
     ",\n"
     (fmap
-       (\(key, value) -> tab <> "\"" <> key <> "\": " <> Misc.extract value)
+       (\(key, value) -> tab <> "\"" <> key <> "\": " <> Types.getText value)
        (HashMap.toList subTypes)) <>
   "\n}"
