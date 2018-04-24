@@ -1,0 +1,27 @@
+{
+  "languages": [
+    {
+      "name": "elm",
+      "outputPath": "./src/reason/elm"
+    },
+    {
+      "name": "reason",
+      "outputPath": "./src/reason/data"
+    }
+  ],
+  "types": [
+    {
+      "name": "MyType",
+      "kind": "alias",
+      "value": "string"
+    },
+    {
+      "name": "Status",
+      "kind": "union",
+      "constructors": {
+        "Good": [{"my": "string"}],
+        "Bad": ["string"]
+      }
+    }
+  ]
+}

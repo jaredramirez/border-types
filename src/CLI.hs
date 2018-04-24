@@ -9,8 +9,8 @@ import qualified Control.Monad              as M
 import qualified Control.Monad.IO.Class     as MIO
 import qualified Control.Monad.Trans.Class  as MC
 import qualified Control.Monad.Trans.Except as E
-import           Data.ByteString            (ByteString)
-import qualified Data.ByteString            as BS
+import           Data.ByteString.Lazy       (ByteString)
+import qualified Data.ByteString.Lazy       as BS
 import           Data.Semigroup             ((<>))
 import           Data.Text                  (Text)
 import qualified Data.Text                  as Text
@@ -18,9 +18,10 @@ import qualified Data.Version               as V
 import qualified Misc
 import           Options.Applicative        (Parser, ParserInfo, (<**>), (<|>))
 import qualified Options.Applicative        as OptApp
+import qualified Parser.RootConfig
 import qualified Paths_border_types         as Self
 import qualified System.Directory           as SysDir
-import           Types                      (RootConfig)
+import           Types                      (RootConfig, TypeString)
 import qualified Types
 
 start :: IO ()
@@ -63,12 +64,16 @@ versionSubroutine = putStrLn (V.showVersion Self.version)
 data GenerateTypeSubroutineError
   = FileNotFound Text
   | CannotReadFile Text
+  | JsonError Text
 
 type ExceptT a = E.ExceptT GenerateTypeSubroutineError IO a
 
 liftIOToExceptT ::
      Exception e => (e -> GenerateTypeSubroutineError) -> IO a -> ExceptT a
 liftIOToExceptT toErr io = E.withExceptT toErr (E.ExceptT $ Exception.try io)
+
+liftEitherToExceptT :: Either GenerateTypeSubroutineError a -> ExceptT a
+liftEitherToExceptT = E.ExceptT . return
 
 forSomeExecption :: a -> SomeException -> a
 forSomeExecption err _ = err
@@ -81,13 +86,12 @@ generateSubroutineParser =
 
 generateSubroutine :: Text -> IO ()
 generateSubroutine path =
-  let except =
-        E.withExceptT
-          dispalyGenerateTypeSubroutineError
-          (doesFileExist path >>= readFileAsByteString)
-  in E.runExceptT except >>= \case
+  let result =
+        (E.runExceptT . E.withExceptT dispalyGenerateTypeSubroutineError)
+          (doesFileExist path >>= readFileAsByteString >>= parseFile)
+  in result >>= \case
        Left errorMessage -> putStrLn (Text.unpack errorMessage)
-       Right _ -> putStrLn (Text.unpack "Success")
+       Right config -> putStrLn (Text.unpack "Success")
 
 doesFileExist :: Text -> ExceptT Text
 doesFileExist path =
@@ -106,14 +110,20 @@ readFileAsByteString path =
     (forSomeExecption (CannotReadFile path))
     (BS.readFile $ Text.unpack path)
 
-tab :: Text
-tab = "    "
+parseFile :: ByteString -> ExceptT RootConfig
+parseFile bytestring =
+  liftEitherToExceptT
+    (Misc.mapLeft (JsonError . Text.pack) $
+     Parser.RootConfig.parseString bytestring)
 
 dispalyGenerateTypeSubroutineError :: GenerateTypeSubroutineError -> Text
 dispalyGenerateTypeSubroutineError err =
-  "\n" <> tab <>
+  "\n     " <>
   case err of
     FileNotFound path ->
       "Uh oh, I couldn't find any file at \"" <> path <> "\". Is there a typo?"
     CannotReadFile path ->
       "Uh oh, I couldn't read the file at \"" <> path <> "\"."
+    JsonError errorMessage ->
+      "I ran into a problem while I was parsing your config file. " <>
+      Text.drop 12 errorMessage
