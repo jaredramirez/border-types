@@ -35,6 +35,7 @@ executable border-types
                      , Parser.LanguageConfig
                      , Parser.RootConfig
                      , Parser.Misc
+                     , Generate
                      , Generate.Reason
                      , Generate.Elm
                      , Misc
@@ -62,6 +63,7 @@ library
                      , Parser.LanguageConfig
                      , Parser.RootConfig
                      , Parser.Misc
+                     , Generate
                      , Generate.Reason
                      , Generate.Elm
                      , Misc

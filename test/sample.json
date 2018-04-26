@@ -2,11 +2,11 @@
   "languages": [
     {
       "name": "elm",
-      "outputPath": "./src/reason/elm"
+      "outputPath": "./test/src/elm/Data.elm"
     },
     {
       "name": "reason",
-      "outputPath": "./src/reason/data"
+      "outputPath": "./test/src/reason/data.re"
     }
   ],
   "types": [
