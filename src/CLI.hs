@@ -16,6 +16,7 @@ import           Data.Semigroup             ((<>))
 import           Data.Text                  (Text)
 import qualified Data.Text                  as Text
 import qualified Data.Text.Encoding         as TextEncode
+import qualified Data.Text.IO               as TextIO
 import qualified Data.Version               as V
 import qualified Generate                   as Gen
 import           Misc                       ((<&>))
@@ -78,10 +79,13 @@ generateSubroutine path =
         (E.runExceptT . E.withExceptT dispalyGenerateTypeSubroutineError)
           (doesFileExist path >>= readFileAsByteString >>=
            parseFile <&> generate >>=
-           writeFiles)
+           writeSourceFiles)
   in result >>= \case
-       Left errorMessage -> putStrLn (Text.unpack errorMessage)
-       Right config -> putStrLn (Text.unpack "Success")
+       Left errorMessage -> TextIO.putStrLn errorMessage
+       Right filenames ->
+         TextIO.putStrLn $
+         "Success! Wrote type definitions to\n" <>
+         foldr (\filename acc -> acc <> "    " <> filename <> "\n") "" filenames
 
 doesFileExist :: Text -> ExceptT Text
 doesFileExist path =
@@ -117,16 +121,17 @@ generate config =
           Types.getText . Gen.generate (Types.types config))
   in fmap (`Misc.applyTuple` funcTuple) languages
 
-writeFiles :: [(Text, ByteString)] -> ExceptT [()]
-writeFiles files =
-  liftIOToExceptT
-    (forSomeExecption (CannotReadFile "TMP"))
-    (traverse
-       (\(path, bs) ->
-          let path' = Text.unpack path
-              dir = (Text.unpack . fst . Text.breakOnEnd "/") path
-          in SysDir.createDirectoryIfMissing True dir >> BS.writeFile path' bs)
-       files)
+writeSourceFiles :: [(Text, ByteString)] -> ExceptT [Text]
+writeSourceFiles = traverse writeSourceFilesHelper
+
+writeSourceFilesHelper :: (Text, ByteString) -> ExceptT Text
+writeSourceFilesHelper (path, bs) =
+  let path' = Text.unpack path
+      dir = (Text.unpack . fst . Text.breakOnEnd "/") path
+  in liftIOToExceptT
+       (forSomeExecption (FailedToWriteToFile path))
+       (SysDir.createDirectoryIfMissing True dir >> BS.writeFile path' bs >>
+        return path)
 
 data GenerateTypeSubroutineError
   = FileNotFound Text
@@ -157,3 +162,5 @@ dispalyGenerateTypeSubroutineError err =
     JsonError errorMessage ->
       "I ran into a problem while I was parsing your config file. " <>
       Text.drop 12 errorMessage
+    FailedToWriteToFile filename ->
+      "I ran into a problem while I writing to the file: " <> filename
