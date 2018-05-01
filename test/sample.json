@@ -16,6 +16,14 @@
       "value": "string"
     },
     {
+      "name": "AType",
+      "kind": "alias",
+      "value": {
+        "a": "int",
+        "b": "bool"
+      }
+    },
+    {
       "name": "Status",
       "kind": "union",
       "constructors": {

@@ -22,8 +22,11 @@ tab = Types.TypeString "    "
 noTab :: TypeString
 noTab = Types.TypeString ""
 
+newLine :: TypeString
+newLine = Types.TypeString "\n"
+
 toModule :: Text -> TypeString
-toModule name = Types.TypeString $ "module " <> name <> " exposing (..)\n"
+toModule name = Types.TypeString $ "module " <> name <> " exposing (..)\n\n\n"
 
 toCustomType :: CustomType -> TypeString
 toCustomType customType =
@@ -39,7 +42,9 @@ unionType name subTypes =
     (Types.TypeString "")
     (case HashMap.toList subTypes of
        [] -> []
-       head:tail -> unionTypeHelper '=' head : fmap (unionTypeHelper '|') tail)
+       head:tail -> unionTypeHelper '=' head : fmap (unionTypeHelper '|') tail) <>
+  newLine <>
+  newLine
 
 unionTypeHelper :: Char -> (Text, [PrimitiveType]) -> TypeString
 unionTypeHelper c (key, values) =
@@ -62,7 +67,10 @@ unionTypeHelper c (key, values) =
 aliasType :: Text -> PrimitiveType -> TypeString
 aliasType name subType =
   (Types.TypeString $ "type alias " <> name <> " =\n") <>
-  toPrimitiveTypeWithTab tab subType
+  toPrimitiveTypeWithTab tab subType <>
+  newLine <>
+  newLine <>
+  newLine
 
 toPrimitiveType :: PrimitiveType -> TypeString
 toPrimitiveType = toPrimitiveTypeWithTab noTab

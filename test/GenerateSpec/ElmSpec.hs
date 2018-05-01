@@ -18,7 +18,7 @@ spec =
     describe "module" $
       it "should generate string" $
       GenElm.toModule "Hello" `shouldBe`
-      Types.TypeString "module Hello exposing (..)\n"
+      Types.TypeString "module Hello exposing (..)\n\n\n"
     describe "primitive types" $ do
       it "should generate string" $
         GenElm.toPrimitiveType Types.String `shouldBe` Types.TypeString "String"
@@ -52,12 +52,12 @@ spec =
           "type alias Hello =\n\
           \    { world : Int\n\
           \    , hello : String\n\
-          \    }"
+          \    }\n\n\n"
       it "should generate string type" $
         GenElm.toCustomType (Types.Alias "Hello" Types.String) `shouldBe`
         Types.TypeString
           "type alias Hello =\n\
-          \    String"
+          \    String\n\n\n"
       it "should generate union type" $
         GenElm.toCustomType
           (Types.Union
@@ -68,8 +68,8 @@ spec =
           "type Status\n\
           \    = Okay\n\
           \    | Bad Int\n\
-          \    | Good String\n"
-      it "should generate union typewith record" $
+          \    | Good String\n\n\n"
+      it "should generate union type with record" $
         GenElm.toCustomType
           (Types.Union
              "Status"
@@ -89,4 +89,4 @@ spec =
           \        { world : Int\n\
           \        , hello : String\n\
           \        }\n\
-          \    | Good String\n"
+          \    | Good String\n\n\n"

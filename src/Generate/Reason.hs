@@ -18,6 +18,9 @@ import qualified Types
 tab :: Text
 tab = "  "
 
+newLine :: TypeString
+newLine = Types.TypeString "\n"
+
 toCustomType :: CustomType -> TypeString
 toCustomType customType =
   case customType of
@@ -27,11 +30,12 @@ toCustomType customType =
 unionType :: Text -> HashMap Text [PrimitiveType] -> TypeString
 unionType name subTypes =
   let constructors = HashMap.toList subTypes
-  in Types.TypeString $
-     "type " <> Text.toLower name <> " =\n" <>
-     (flip Text.snoc ';' .
-      Text.concat . List.intersperse "\n" . fmap toConstructors)
-       constructors
+  in (Types.TypeString $
+      "type " <> Text.toLower name <> " =\n" <>
+      (flip Text.snoc ';' .
+       Text.concat . List.intersperse "\n" . fmap toConstructors)
+        constructors) <>
+     newLine
 
 toConstructors :: (Text, [PrimitiveType]) -> Text
 toConstructors (name, types) =
@@ -39,25 +43,36 @@ toConstructors (name, types) =
   (if List.null types
      then ""
      else "(" <>
-          Text.intercalate ", " (fmap (Types.getText . toPrimitiveType) types) <>
+          Text.intercalate
+            ", "
+            (fmap
+               (Types.getText .
+                toPrimitiveTypeWithRecordTab (Types.TypeString tab))
+               types) <>
           ")")
 
 aliasType :: Text -> PrimitiveType -> TypeString
 aliasType name subType =
   (Types.TypeString $ "type " <> Text.toLower name <> " = ") <>
-  toPrimitiveType subType
+  toPrimitiveType subType <>
+  Types.TypeString ";" <>
+  newLine <>
+  newLine
 
 toPrimitiveType :: PrimitiveType -> TypeString
-toPrimitiveType type' =
+toPrimitiveType = toPrimitiveTypeWithRecordTab (Types.TypeString "")
+
+toPrimitiveTypeWithRecordTab :: TypeString -> PrimitiveType -> TypeString
+toPrimitiveTypeWithRecordTab tab' type' =
   case type' of
-    Types.String          -> string
-    Types.Int             -> int
-    Types.Float           -> float
-    Types.Bool            -> bool
-    Types.Unit            -> unit
-    Types.List subType    -> list (toPrimitiveType subType)
-    Types.Tuple subTypes  -> tuple (fmap toPrimitiveType subTypes)
-    Types.Record subTypes -> record (HashMap.map toPrimitiveType subTypes)
+    Types.String -> string
+    Types.Int -> int
+    Types.Float -> float
+    Types.Bool -> bool
+    Types.Unit -> unit
+    Types.List subType -> list (toPrimitiveType subType)
+    Types.Tuple subTypes -> tuple (fmap toPrimitiveType subTypes)
+    Types.Record subTypes -> record tab' (HashMap.map toPrimitiveType subTypes)
 
 string :: TypeString
 string = Types.TypeString "string"
@@ -82,13 +97,16 @@ tuple subTypes =
   Types.TypeString $
   "(" <> Text.intercalate ", " (fmap Types.getText subTypes) <> ")"
 
-record :: HashMap Text TypeString -> TypeString
-record subTypes =
-  Types.TypeString $
-  "{.\n" <>
-  Text.intercalate
-    ",\n"
-    (fmap
-       (\(key, value) -> tab <> "\"" <> key <> "\": " <> Types.getText value)
-       (HashMap.toList subTypes)) <>
-  "\n}"
+record :: TypeString -> HashMap Text TypeString -> TypeString
+record tab' subTypes =
+  let tabText = Types.getText tab'
+  in Types.TypeString $
+     "{\n" <> tab <> tabText <> ".\n" <>
+     Text.concat
+       (fmap
+          (\(key, value) ->
+             tab <> tabText <> "\"" <> key <> "\": " <> Types.getText value <>
+             ",\n")
+          (HashMap.toList subTypes)) <>
+     tabText <>
+     "}"
