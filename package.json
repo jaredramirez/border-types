@@ -1,0 +1,22 @@
+{
+  "name": "border-types",
+  "version": "0.1.0",
+  "scripts": {
+    "build": "bsb -make-world",
+    "build:watch": "bsb -make-world -w",
+    "build:clean": "bsb -clean-world",
+    "start": "node --no-warnings src/Main.bs.js"
+  },
+  "keywords": [
+    "BuckleScript"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "bs-platform": "3.1.5"
+  },
+  "dependencies": {
+    "@glennsl/bs-json": "2.0.0",
+    "minimist.re": "^0.0.5"
+  }
+}

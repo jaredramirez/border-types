@@ -1,13 +1,18 @@
-# border-types
+# Basic Reason Template
 
-> A tool to keep you types in syncs across your stack
+Hello! This project allows you to quickly get started with Reason and BuckleScript. If you wanted a more sophisticated version, try the `react` template (`bsb -theme react -init .`).
 
-## Usage
+# Build
+```
+npm run build
+```
 
-TODO
+# Build + Watch
 
-## Contributing
+```
+npm run start
+```
 
-* You need []()[`stack`](https://docs.haskellstack.org/en/stable/README/) installed
-* You can run the test suite with `stack test`
-* Please add a spec file and write tests, you can look to the test suite in `tests/` to look at an example
+
+# Editor
+If you use `vscode`, Press `Windows + Shift + B` it will build automatically
