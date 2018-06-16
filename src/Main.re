@@ -12,6 +12,7 @@ switch (parsed) {
   Print.printMiministError(err);
   exit(1);
 | Ok(options) =>
+  Js.log("a");
   if (Minimist.has("help", options.presence)) {
     Print.printHelp();
     exit(0);
@@ -25,5 +26,5 @@ switch (parsed) {
       exit(0);
     | exception Not_found => exit(1)
     };
-  }
+  };
 };

@@ -6,27 +6,27 @@ module StringMap =
 
 type map('subType) = StringMap.t('subType);
 
-type primitiveType =
+type primitive =
   | String
   | Int
   | Float
   | Bool
   | Unit
-  | List(primitiveType)
-  | Tuple(primitiveType)
-  | Record(string, map(primitiveType));
+  | List(primitive)
+  | Tuple(list(primitive))
+  | Record(map(primitive));
 
 type aliasMetaData = {
   name: string,
-  value: primitiveType,
+  value: primitive,
 };
 
 type unionMetaData = {
   name: string,
-  constructors: list(map(primitiveType)),
+  constructors: list(map(primitive)),
 };
 
-type customType =
+type custom =
   | Alias(aliasMetaData)
   | Union(unionMetaData);
 
@@ -40,5 +40,5 @@ type language =
 
 type config = {
   languages: list(language),
-  types: list(customType),
+  types: list(custom),
 };

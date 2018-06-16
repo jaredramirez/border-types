@@ -5,17 +5,20 @@
     "build": "bsb -make-world",
     "build:watch": "bsb -make-world -w",
     "build:clean": "bsb -clean-world",
-    "start": "node --no-warnings src/Main.bs.js"
+    "start": "node --no-warnings lib/js/src/Main.bs.js",
+    "start:debug": "node --no-warnings --inspect-brk lib/js/src/Main.bs.js",
+    "test": "jest",
+    "test:watch": "yarn test --watch"
   },
-  "keywords": [
-    "BuckleScript"
-  ],
+  "keywords": ["BuckleScript"],
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "bs-jest": "^0.3.2",
     "bs-platform": "3.1.5"
   },
   "dependencies": {
+    "@glennsl/bs-jest": "^0.4.2",
     "@glennsl/bs-json": "2.0.0",
     "minimist.re": "^0.0.5"
   }

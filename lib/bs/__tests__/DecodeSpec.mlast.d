@@ -1,0 +1,1 @@
+__tests__/DecodeSpec-BorderTypes.cmj : src/Decode-BorderTypes.cmj src/Types-BorderTypes.cmj

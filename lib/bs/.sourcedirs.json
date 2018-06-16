@@ -1,1 +1,1 @@
-{ "dirs" : [ "src" ] , "generated" : [] }
+{ "dirs" : [ "__tests__" , "src" ] , "generated" : [] }
