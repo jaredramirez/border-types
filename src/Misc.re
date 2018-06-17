@@ -1,10 +1,30 @@
 module R = Belt.Result;
 module D = Js.Dict;
 
+/* CORE */
+
 let identity = (a: 'a) : 'a => a;
+let (<<) = (f, g, x) => g(f(x));
+let (>>) = (f, g, x) => f(g(x));
+
+/* RESULT */
 
 let mapResult = (func: 'a => 'b, value: R.t('a, 'e)) : R.t('b, 'e) =>
   R.map(value, func);
+
+let andThenResult =
+    (func: 'a => R.t('b, 'e), value: R.t('a, 'e))
+    : R.t('b, 'e) =>
+  switch (value) {
+  | R.Error(error) => R.Error(error)
+  | R.Ok(result) => func(result)
+  };
+
+let mapErrorResult = (func: 'e1 => 'e2, value: R.t('a, 'e1)) : R.t('a, 'e2) =>
+  switch (value) {
+  | R.Error(error) => R.Error(func(error))
+  | R.Ok(result) => R.Ok(result)
+  };
 
 let map2Result =
     (func: ('a, 'b) => 'c, a: R.t('a, 'e), b: R.t('b, 'e))
