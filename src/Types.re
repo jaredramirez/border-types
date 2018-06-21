@@ -21,14 +21,14 @@ type aliasMetaData = {
   value: primitive,
 };
 
-type unionMetaData = {
+type unionMetaData('custom) = {
   name: string,
-  constructors: list(map(primitive)),
+  constructors: map(list('custom)),
 };
 
 type custom =
   | Alias(aliasMetaData)
-  | Union(unionMetaData);
+  | Union(unionMetaData(custom));
 
 type languageMetaData = {outputPath: string};
 

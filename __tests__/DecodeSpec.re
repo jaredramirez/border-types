@@ -8,7 +8,7 @@ describe("Decode", () =>
       test("to decode string type", () =>
         "string"
         |> Js.Json.string
-        |> Decode.Primitive.run
+        |> Decode.Primitive.decode
         |> expect
         |> toEqual(R.Ok(Types.String))
       )
