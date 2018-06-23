@@ -1,1 +1,1 @@
-src/Main-BorderTypes.cmj : src/Print-BorderTypes.cmj
+src/Main-BorderTypes.cmj : src/Decode-BorderTypes.cmj

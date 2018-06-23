@@ -1,30 +1,35 @@
-let parseArgs =
-  Minimist.parse(
-    ~alias=[("h", "help"), ("V", "version")],
-    ~presence=["help", "version"],
-  );
+let result =
+  "[55, \"string\"]" |> Json.parseOrRaise |> Decode.Primitive.decode;
 
-let parsed =
-  Node.Process.argv |> Js.Array.sliceFrom(2) |> Array.to_list |> parseArgs;
+Js.log(result);
 
-switch (parsed) {
-| Minimist.Error(err) =>
-  Print.printMiministError(err);
-  exit(1);
-| Ok(options) =>
-  Js.log("a");
-  if (Minimist.has("help", options.presence)) {
-    Print.printHelp();
-    exit(0);
-  } else if (Minimist.has("version", options.presence)) {
-    Print.printVersion();
-    exit(0);
-  } else {
-    switch (List.hd(options.rest)) {
-    | fileName =>
-      print_endline(fileName);
-      exit(0);
-    | exception Not_found => exit(1)
-    };
-  };
-};
+/* let parseArgs = */
+/* Minimist.parse( */
+/* ~alias=[("h", "help"), ("V", "version")], */
+/* ~presence=["help", "version"], */
+/* ); */
+
+/* let parsed = */
+/* Node.Process.argv |> Js.Array.sliceFrom(2) |> Array.to_list |> parseArgs; */
+
+/* switch (parsed) { */
+/* | Minimist.Error(err) => */
+/* Print.printMiministError(err); */
+/* exit(1); */
+/* | Ok(options) => */
+/* Js.log("a"); */
+/* if (Minimist.has("help", options.presence)) { */
+/* Print.printHelp(); */
+/* exit(0); */
+/* } else if (Minimist.has("version", options.presence)) { */
+/* Print.printVersion(); */
+/* exit(0); */
+/* } else { */
+/* switch (List.hd(options.rest)) { */
+/* | fileName => */
+/* print_endline(fileName); */
+/* exit(0); */
+/* | exception Not_found => exit(1) */
+/* }; */
+/* }; */
+/* }; */

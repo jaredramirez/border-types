@@ -109,7 +109,7 @@ module Primitive = {
       ++ message
       ++ "\" instead."
     | ListError(subError) =>
-      "I ran into an error decoding a list, x-tuple, or unit: "
+      "I ran into an error decoding a list or x-tuple: "
       ++ errorToString(subError)
     | RecordError(subError) =>
       "I ran into an error decoding a record: " ++ errorToString(subError)
